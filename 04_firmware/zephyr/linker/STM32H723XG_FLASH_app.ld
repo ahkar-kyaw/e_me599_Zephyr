@@ -225,10 +225,31 @@ SECTIONS
     __bss_end__ = _ebss;
       PROVIDE( __bss_end = .);
   } >DTCMRAM
+  
   PROVIDE( __non_tls_bss_start = ADDR(.bss) );
 
   PROVIDE( __bss_start = __tbss_start );
   PROVIDE( __bss_size = __bss_end - __bss_start );
+
+  /* DMA buffers
+   *
+   * STM32H7 DMA buffers should not be placed in DTCMRAM.
+   * Put ADC, UART, SPI, and other DMA buffers here.
+   *
+   * This section is NOLOAD, so initialize buffers explicitly in C
+   * if a known startup value is required.
+   */
+  .dma_buffer (NOLOAD) :
+  {
+    . = ALIGN(32);
+    __dma_buffer_start__ = .;
+
+    *(.dma_buffer)
+    *(.dma_buffer*)
+
+    . = ALIGN(32);
+    __dma_buffer_end__ = .;
+  } >RAM_D2
 
   /* User_heap_stack section, used to check that there is enough RAM left */
   ._user_heap_stack (NOLOAD) :

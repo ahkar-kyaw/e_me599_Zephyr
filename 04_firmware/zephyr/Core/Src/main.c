@@ -116,12 +116,25 @@ int main(void)
 
   dma_buffers_init();
 
-  HAL_TIM_Base_Start(&htim2);
+  if (HAL_TIM_Base_Start(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_raw, ADC1_RAW_COUNT);
-  HAL_TIM_Base_Start(&htim3);
+  if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
-  HAL_UART_Receive_DMA(&huart2, crsf_rx_dma_buf, CRSF_RX_DMA_BUF_LEN);
+  if (HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_raw, ADC1_RAW_COUNT) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  if (HAL_TIM_Base_Start(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
   /* USER CODE END 2 */
 

@@ -1,4 +1,5 @@
 #include "dma_buffers.h"
+
 #include <string.h>
 
 DMA_BUFFER_SECTION uint16_t adc1_raw[ADC1_RAW_COUNT];
