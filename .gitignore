@@ -1,3 +1,24 @@
+
+# Build outputs
+04_firmware/build/
+04_firmware/cmake-build-*/
+04_firmware/Debug/
+04_firmware/Release/
+
+# CMake generated files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+
+# Firmware build products
+*.elf
+*.map
+*.hex
+*.bin
+*.list
+*.lst
+
 # -------------------------------------------------------
 # CMake.gitignore
 # -------------------------------------------------------
