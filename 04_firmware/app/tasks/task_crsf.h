@@ -28,6 +28,11 @@ typedef struct
     uint32_t uart_error_count;
     uint32_t dma_restart_count;
 
+    uint32_t rx_byte_count;
+    uint8_t last_rx_byte;
+    uint16_t dma_write_index;
+    uint16_t dma_read_index;
+
     uint16_t raw[TASK_CRSF_CHANNEL_COUNT];
     uint16_t us[TASK_CRSF_CHANNEL_COUNT];
     int16_t norm_permille[TASK_CRSF_CHANNEL_COUNT];

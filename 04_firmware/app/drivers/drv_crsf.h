@@ -17,6 +17,7 @@ typedef struct
 {
     crsf_channels_t channels;
     crsf_link_statistics_t link_stats;
+
     uint32_t last_rc_frame_tick_ms;
     uint32_t valid_frame_count;
     uint32_t valid_rc_frame_count;
@@ -24,6 +25,12 @@ typedef struct
     uint32_t length_error_count;
     uint32_t uart_error_count;
     uint32_t dma_restart_count;
+
+    uint32_t rx_byte_count;
+    uint8_t last_rx_byte;
+    uint16_t dma_write_index;
+    uint16_t dma_read_index;
+
     bool receiver_connected;
 } drv_crsf_state_t;
 

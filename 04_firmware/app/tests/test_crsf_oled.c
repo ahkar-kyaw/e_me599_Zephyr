@@ -46,6 +46,7 @@ static void test_crsf_oled_thread(void *argument)
             (void)task_oled_ui_set_line(5u, "");
             (void)task_oled_ui_set_line(6u, "");
             (void)task_oled_ui_set_line(7u, "");
+
             osDelay(TEST_CRSF_OLED_PERIOD_MS);
             continue;
         }
@@ -101,17 +102,17 @@ static void test_crsf_oled_thread(void *argument)
         (void)snprintf(
             line,
             sizeof(line),
-            "RC%lu CRC%lu",
-            (unsigned long)crsf.valid_rc_frame_count,
-            (unsigned long)crsf.crc_error_count);
+            "BY%lu LB%02X",
+            (unsigned long)crsf.rx_byte_count,
+            crsf.last_rx_byte);
         (void)task_oled_ui_set_line(6u, line);
 
         (void)snprintf(
             line,
             sizeof(line),
-            "LEN%lu UART%lu",
-            (unsigned long)crsf.length_error_count,
-            (unsigned long)crsf.uart_error_count);
+            "RC%lu CR%lu",
+            (unsigned long)crsf.valid_rc_frame_count,
+            (unsigned long)crsf.crc_error_count);
         (void)task_oled_ui_set_line(7u, line);
 
         osDelay(TEST_CRSF_OLED_PERIOD_MS);

@@ -136,6 +136,11 @@ static void task_crsf_publish_from_driver_state(const drv_crsf_state_t *state)
     next.uart_error_count = state->uart_error_count;
     next.dma_restart_count = state->dma_restart_count;
 
+    next.rx_byte_count = state->rx_byte_count;
+    next.last_rx_byte = state->last_rx_byte;
+    next.dma_write_index = state->dma_write_index;
+    next.dma_read_index = state->dma_read_index;
+
     if (state->channels.valid)
     {
         for (uint8_t i = 0u; i < TASK_CRSF_CHANNEL_COUNT; i++)
