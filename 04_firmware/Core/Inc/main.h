@@ -57,10 +57,10 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define STLK_VCP_RX_Pin GPIO_PIN_8
-#define STLK_VCP_RX_GPIO_Port GPIOD
-#define STLK_VCP_TX_Pin GPIO_PIN_9
-#define STLK_VCP_TX_GPIO_Port GPIOD
+#define USART3_TX_Pin GPIO_PIN_8
+#define USART3_TX_GPIO_Port GPIOD
+#define USART3_RX_Pin GPIO_PIN_9
+#define USART3_RX_GPIO_Port GPIOD
 #define SWDIO_Pin GPIO_PIN_13
 #define SWDIO_GPIO_Port GPIOA
 #define SWCLK_Pin GPIO_PIN_14
