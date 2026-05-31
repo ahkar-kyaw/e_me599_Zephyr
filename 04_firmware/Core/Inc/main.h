@@ -61,6 +61,8 @@ void Error_Handler(void);
 #define USART3_TX_GPIO_Port GPIOD
 #define USART3_RX_Pin GPIO_PIN_9
 #define USART3_RX_GPIO_Port GPIOD
+#define IMU_CS_N_Pin GPIO_PIN_14
+#define IMU_CS_N_GPIO_Port GPIOD
 #define SWDIO_Pin GPIO_PIN_13
 #define SWDIO_GPIO_Port GPIOA
 #define SWCLK_Pin GPIO_PIN_14

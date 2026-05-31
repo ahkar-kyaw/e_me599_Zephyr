@@ -29,8 +29,9 @@
 #include "i2c.h"
 
 #include "task_crsf.h"
+#include "task_imu.h"
 #include "task_oled_ui.h"
-#include "test_crsf_oled_serial.h"
+#include "task_app_ui.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -102,8 +103,9 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   (void)task_crsf_start();
+  task_imu_start();
   (void)task_oled_ui_start(&hi2c1);
-  test_crsf_oled_serial_start();
+  task_app_ui_start();
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */

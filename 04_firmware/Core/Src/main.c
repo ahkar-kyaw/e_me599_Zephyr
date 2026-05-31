@@ -22,12 +22,13 @@
 #include "cmsis_os2.h"
 #include "dma.h"
 #include "i2c.h"
+#include "spi.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "dma_buffers.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -100,17 +101,9 @@ int main(void)
   MX_USART3_UART_Init();
   MX_USART2_UART_Init();
   MX_I2C1_Init();
+  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
-  dma_buffers_init();
 
-  {
-    const char boot_msg[] = "\r\nBOOT: CRSF + OLED serial test firmware\r\n";
-    (void)HAL_UART_Transmit(
-      &huart3,
-      (uint8_t *)boot_msg,
-      sizeof(boot_msg) - 1u,
-      100u);
-  }
   /* USER CODE END 2 */
 
   /* Init scheduler */

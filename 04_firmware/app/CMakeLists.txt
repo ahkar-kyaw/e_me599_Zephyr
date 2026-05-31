@@ -10,11 +10,12 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
     ${CMAKE_CURRENT_LIST_DIR}/drivers/drv_crsf.c
     ${CMAKE_CURRENT_LIST_DIR}/drivers/drv_ssd1306.c
+    ${CMAKE_CURRENT_LIST_DIR}/drivers/drv_ism330dhcx.c
 
     ${CMAKE_CURRENT_LIST_DIR}/tasks/task_crsf.c
     ${CMAKE_CURRENT_LIST_DIR}/tasks/task_oled_ui.c
-
-    ${CMAKE_CURRENT_LIST_DIR}/tests/test_crsf_oled_serial.c
+    ${CMAKE_CURRENT_LIST_DIR}/tasks/task_imu.c
+    ${CMAKE_CURRENT_LIST_DIR}/tasks/task_app_ui.c
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
@@ -22,5 +23,4 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/proto
     ${CMAKE_CURRENT_LIST_DIR}/drivers
     ${CMAKE_CURRENT_LIST_DIR}/tasks
-    ${CMAKE_CURRENT_LIST_DIR}/tests
 )
