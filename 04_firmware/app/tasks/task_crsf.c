@@ -8,7 +8,7 @@
 
 #include "dma_buffers.h"
 #include "drv_crsf.h"
-#include "main.h"
+#include "usart.h"
 
 #define TASK_CRSF_STACK_BYTES        2048u
 #define TASK_CRSF_PERIOD_MS          2u

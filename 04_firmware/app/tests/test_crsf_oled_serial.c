@@ -7,6 +7,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "cmsis_os2.h"
+#include "usart.h"
 
 #include "main.h"
 #include "task_crsf.h"
