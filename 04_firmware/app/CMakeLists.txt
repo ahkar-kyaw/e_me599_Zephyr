@@ -24,3 +24,5 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/drivers
     ${CMAKE_CURRENT_LIST_DIR}/tasks
 )
+
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE m)
