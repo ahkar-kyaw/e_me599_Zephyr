@@ -87,6 +87,10 @@ void Error_Handler(void);
 #define crsf_rx_GPIO_Port GPIOD
 #define imu_spi_mosi_Pin GPIO_PIN_5
 #define imu_spi_mosi_GPIO_Port GPIOB
+#define oled_i2c_scl_Pin GPIO_PIN_8
+#define oled_i2c_scl_GPIO_Port GPIOB
+#define oled_i2c_sda_Pin GPIO_PIN_9
+#define oled_i2c_sda_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
