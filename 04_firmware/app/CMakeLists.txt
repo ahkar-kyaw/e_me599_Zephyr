@@ -14,7 +14,6 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/tasks/task_crsf.c
     ${CMAKE_CURRENT_LIST_DIR}/tasks/task_oled_ui.c
 
-    ${CMAKE_CURRENT_LIST_DIR}/tests/test_debug_uart.c
     ${CMAKE_CURRENT_LIST_DIR}/tests/test_crsf_oled.c
 )
 

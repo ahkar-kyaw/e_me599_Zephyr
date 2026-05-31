@@ -136,13 +136,16 @@ static void task_crsf_publish_from_driver_state(const drv_crsf_state_t *state)
     next.uart_error_count = state->uart_error_count;
     next.dma_restart_count = state->dma_restart_count;
 
-    for (uint8_t i = 0u; i < TASK_CRSF_CHANNEL_COUNT; i++)
+    if (state->channels.valid)
     {
-        const uint16_t raw = state->channels.raw[i];
+        for (uint8_t i = 0u; i < TASK_CRSF_CHANNEL_COUNT; i++)
+        {
+            const uint16_t raw = state->channels.raw[i];
 
-        next.raw[i] = raw;
-        next.us[i] = task_crsf_raw_to_us(raw);
-        next.norm_permille[i] = task_crsf_raw_to_permille(raw);
+            next.raw[i] = raw;
+            next.us[i] = task_crsf_raw_to_us(raw);
+            next.norm_permille[i] = task_crsf_raw_to_permille(raw);
+        }
     }
 
     taskENTER_CRITICAL();

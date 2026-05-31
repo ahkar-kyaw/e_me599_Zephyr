@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 
+#include "FreeRTOS.h"
+#include "task.h"
 #include "cmsis_os2.h"
 
 #include "task_crsf.h"
@@ -99,7 +101,7 @@ static void test_crsf_oled_thread(void *argument)
         (void)snprintf(
             line,
             sizeof(line),
-            "RC %lu CRC %lu",
+            "RC%lu CRC%lu",
             (unsigned long)crsf.valid_rc_frame_count,
             (unsigned long)crsf.crc_error_count);
         (void)task_oled_ui_set_line(6u, line);
@@ -107,8 +109,9 @@ static void test_crsf_oled_thread(void *argument)
         (void)snprintf(
             line,
             sizeof(line),
-            "SEQ %lu",
-            (unsigned long)crsf.sequence);
+            "LEN%lu UART%lu",
+            (unsigned long)crsf.length_error_count,
+            (unsigned long)crsf.uart_error_count);
         (void)task_oled_ui_set_line(7u, line);
 
         osDelay(TEST_CRSF_OLED_PERIOD_MS);
