@@ -15,7 +15,7 @@
 #define TASK_IMU_PERIOD_MS                10u
 #define TASK_IMU_RETRY_MS                 1000u
 
-#define TASK_IMU_ACCEL_MG_PER_LSB_NUM     122
+#define TASK_IMU_ACCEL_MG_PER_LSB_NUM     61
 #define TASK_IMU_ACCEL_MG_PER_LSB_DEN     1000
 
 #define TASK_IMU_GYRO_MDPS_PER_LSB_NUM    875
@@ -67,6 +67,15 @@ static int32_t task_imu_raw_gyro_to_mdps(int32_t raw)
 {
     return (raw * TASK_IMU_GYRO_MDPS_PER_LSB_NUM) /
            TASK_IMU_GYRO_MDPS_PER_LSB_DEN;
+}
+
+static uint32_t task_imu_accel_norm_mg(int32_t ax_mg, int32_t ay_mg, int32_t az_mg)
+{
+    const float ax = (float)ax_mg;
+    const float ay = (float)ay_mg;
+    const float az = (float)az_mg;
+
+    return (uint32_t)sqrtf((ax * ax) + (ay * ay) + (az * az));
 }
 
 static int16_t task_imu_float_deg_to_cdeg(float value_deg)
@@ -140,6 +149,11 @@ static void task_imu_publish_calibration_progress(
     s_snapshot.ay_mg = task_imu_raw_accel_to_mg(raw->ay_raw);
     s_snapshot.az_mg = task_imu_raw_accel_to_mg(raw->az_raw);
 
+    s_snapshot.accel_norm_mg = task_imu_accel_norm_mg(
+        s_snapshot.ax_mg,
+        s_snapshot.ay_mg,
+        s_snapshot.az_mg);
+
     s_snapshot.gx_mdps = task_imu_raw_gyro_to_mdps(raw->gx_raw);
     s_snapshot.gy_mdps = task_imu_raw_gyro_to_mdps(raw->gy_raw);
     s_snapshot.gz_mdps = task_imu_raw_gyro_to_mdps(raw->gz_raw);
@@ -199,6 +213,13 @@ static void task_imu_update_attitude(
 
     const float gx_dps = (float)task_imu_raw_gyro_to_mdps(gx_corr_raw) / 1000.0f;
     const float gy_dps = (float)task_imu_raw_gyro_to_mdps(gy_corr_raw) / 1000.0f;
+
+    const float accel_norm_g = sqrtf((ax_g * ax_g) + (ay_g * ay_g) + (az_g * az_g));
+
+    if ((accel_norm_g < 0.50f) || (accel_norm_g > 1.50f))
+    {
+        return;
+    }
 
     const float roll_acc_deg = atan2f(ay_g, az_g) * TASK_IMU_RAD_TO_DEG;
     const float pitch_acc_deg =
@@ -263,6 +284,11 @@ static void task_imu_publish_running(
     s_snapshot.ax_mg = task_imu_raw_accel_to_mg(raw->ax_raw);
     s_snapshot.ay_mg = task_imu_raw_accel_to_mg(raw->ay_raw);
     s_snapshot.az_mg = task_imu_raw_accel_to_mg(raw->az_raw);
+
+    s_snapshot.accel_norm_mg = task_imu_accel_norm_mg(
+        s_snapshot.ax_mg,
+        s_snapshot.ay_mg,
+        s_snapshot.az_mg);
 
     s_snapshot.gx_mdps = task_imu_raw_gyro_to_mdps(gx_corr_raw);
     s_snapshot.gy_mdps = task_imu_raw_gyro_to_mdps(gy_corr_raw);

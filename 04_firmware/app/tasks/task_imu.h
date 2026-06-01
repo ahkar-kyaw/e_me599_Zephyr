@@ -39,6 +39,8 @@ typedef struct
     int32_t ax_mg;
     int32_t ay_mg;
     int32_t az_mg;
+    
+    uint32_t accel_norm_mg;
 
     int32_t gx_mdps;
     int32_t gy_mdps;

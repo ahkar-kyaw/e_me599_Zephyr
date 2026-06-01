@@ -11,7 +11,7 @@
 #include "task_crsf.h"
 #include "task_imu.h"
 #include "task_oled_ui.h"
-#include "usart.h"
+#include "task_log.h"
 
 #define TASK_APP_UI_STACK_BYTES              2048u
 #define TASK_APP_UI_PERIOD_MS                200u
@@ -39,46 +39,6 @@ static task_app_ui_page_t s_active_page = TASK_APP_UI_PAGE_1;
 static bool s_page_button_armed = true;
 
 static void task_app_ui_thread(void *argument);
-
-static void serial_write(const char *text)
-{
-    if (text == NULL)
-    {
-        return;
-    }
-
-    const size_t len = strlen(text);
-
-    if (len == 0u)
-    {
-        return;
-    }
-
-    (void)HAL_UART_Transmit(
-        &huart3,
-        (uint8_t *)text,
-        (uint16_t)len,
-        100u);
-}
-
-static void serial_printf(const char *format, ...)
-{
-    char buffer[192];
-    va_list args;
-
-    if (format == NULL)
-    {
-        return;
-    }
-
-    va_start(args, format);
-    (void)vsnprintf(buffer, sizeof(buffer), format, args);
-    va_end(args);
-
-    buffer[sizeof(buffer) - 1u] = '\0';
-
-    serial_write(buffer);
-}
 
 static void app_ui_screen_clear(task_oled_ui_screen_t screen)
 {
@@ -251,6 +211,7 @@ static void app_ui_draw_page_imu(task_oled_ui_screen_t screen)
     char roll[12];
     char gx[12];
     char gy[12];
+    char gz[12];
 
     if (!task_imu_get_snapshot(&imu))
     {
@@ -291,39 +252,59 @@ static void app_ui_draw_page_imu(task_oled_ui_screen_t screen)
             "ERR:%lu",
             (unsigned long)imu.error_count);
 
-        serial_printf(
-            "IMU FAIL WHO=0x%02X INIT=%u READ=%u ERR=%lu\r\n",
-            imu.who_am_i,
-            (unsigned int)imu.init_result,
-            (unsigned int)imu.last_read_result,
-            (unsigned long)imu.error_count);
-
         return;
     }
 
     app_ui_format_cdeg(pitch, sizeof(pitch), imu.pitch_cdeg);
     app_ui_format_cdeg(roll, sizeof(roll), imu.roll_cdeg);
+
     app_ui_format_mdps_1dp(gx, sizeof(gx), imu.gx_mdps);
     app_ui_format_mdps_1dp(gy, sizeof(gy), imu.gy_mdps);
+    app_ui_format_mdps_1dp(gz, sizeof(gz), imu.gz_mdps);
 
-    app_ui_screen_printf(screen, 1u, "P:%s R:%s", pitch, roll);
-    app_ui_screen_printf(screen, 2u, "AX:%ldmg", (long)imu.ax_mg);
-    app_ui_screen_printf(screen, 3u, "AY:%ldmg", (long)imu.ay_mg);
-    app_ui_screen_printf(screen, 4u, "AZ:%ldmg", (long)imu.az_mg);
-    app_ui_screen_printf(screen, 5u, "GX:%sdps", gx);
-    app_ui_screen_printf(screen, 6u, "GY:%sdps", gy);
-    app_ui_screen_printf(screen, 7u, "N:%lu", (unsigned long)imu.sample_count);
+    app_ui_screen_printf(
+        screen,
+        1u,
+        "P:%s R:%s",
+        pitch,
+        roll);
 
-    serial_printf(
-        "IMU P=%d R=%d AX=%ld AY=%ld AZ=%ld GX=%ld GY=%ld GZ=%ld N=%lu\r\n",
-        imu.pitch_cdeg,
-        imu.roll_cdeg,
+    app_ui_screen_set_line(
+        screen,
+        2u,
+        "A mg      G dps");
+
+    app_ui_screen_printf(
+        screen,
+        3u,
+        "X:%5ld  X:%s",
         (long)imu.ax_mg,
+        gx);
+
+    app_ui_screen_printf(
+        screen,
+        4u,
+        "Y:%5ld  Y:%s",
         (long)imu.ay_mg,
+        gy);
+
+    app_ui_screen_printf(
+        screen,
+        5u,
+        "Z:%5ld  Z:%s",
         (long)imu.az_mg,
-        (long)imu.gx_mdps,
-        (long)imu.gy_mdps,
-        (long)imu.gz_mdps,
+        gz);
+
+    app_ui_screen_printf(
+        screen,
+        6u,
+        "|A|:%4lu mg",
+        (unsigned long)imu.accel_norm_mg);
+
+    app_ui_screen_printf(
+        screen,
+        7u,
+        "N:%lu",
         (unsigned long)imu.sample_count);
 }
 
@@ -367,8 +348,12 @@ static void app_ui_draw_page_crsf(
         app_ui_screen_set_line(screen, 2u, "C3:---- C4:----");
         app_ui_screen_set_line(screen, 3u, "C5:---- C6:----");
         app_ui_screen_set_line(screen, 4u, "C7:---- C8:----");
+        app_ui_screen_set_line(screen, 5u, "C9:---- C10:---");
 
-        serial_write("C1=---- C2=---- C3=---- C4=---- C5=---- C6=---- C7=---- C8=----\r\n");
+        (void)task_log_write(
+            "C1=---- C2=---- C3=---- C4=---- C5=---- "
+            "C6=---- C7=---- C8=---- C9=---- C10=----\r\n");
+
         return;
     }
 
@@ -384,8 +369,12 @@ static void app_ui_draw_page_crsf(
     app_ui_format_channel_pair(line, sizeof(line), 6u, crsf->us[6], 7u, crsf->us[7]);
     app_ui_screen_set_line(screen, 4u, line);
 
-    serial_printf(
-        "C1=%u C2=%u C3=%u C4=%u C5=%u C6=%u C7=%u C8=%u\r\n",
+    app_ui_format_channel_pair(line, sizeof(line), 8u, crsf->us[8], 9u, crsf->us[9]);
+    app_ui_screen_set_line(screen, 5u, line);
+
+    (void)task_log_printf(
+        "C1=%u C2=%u C3=%u C4=%u C5=%u "
+        "C6=%u C7=%u C8=%u C9=%u C10=%u\r\n",
         crsf->us[0],
         crsf->us[1],
         crsf->us[2],
@@ -393,7 +382,9 @@ static void app_ui_draw_page_crsf(
         crsf->us[4],
         crsf->us[5],
         crsf->us[6],
-        crsf->us[7]);
+        crsf->us[7],
+        crsf->us[8],
+        crsf->us[9]);
 }
 
 static void app_ui_draw_active_page(
