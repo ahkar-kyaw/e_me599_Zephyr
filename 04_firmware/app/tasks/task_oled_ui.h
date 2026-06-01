@@ -14,6 +14,8 @@ extern "C" {
 #define TASK_OLED_UI_LINE_MAX_LEN     22u
 #define TASK_OLED_UI_LINE_COUNT       8u
 
+typedef char task_oled_ui_screen_t[TASK_OLED_UI_LINE_COUNT][TASK_OLED_UI_LINE_MAX_LEN];
+
 typedef enum
 {
     TASK_OLED_UI_PAGE_TERMINAL = 0,
@@ -25,6 +27,8 @@ bool task_oled_ui_start(I2C_HandleTypeDef *hi2c);
 bool task_oled_ui_clear(void);
 bool task_oled_ui_print(const char *text);
 bool task_oled_ui_printf(const char *format, ...);
+
+bool task_oled_ui_set_screen(const task_oled_ui_screen_t screen);
 
 bool task_oled_ui_set_line(uint8_t line, const char *text);
 bool task_oled_ui_clear_line(uint8_t line);

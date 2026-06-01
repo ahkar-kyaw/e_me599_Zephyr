@@ -65,6 +65,12 @@ static drv_ism330dhcx_result_t drv_ism330dhcx_write_reg(
 
     drv_ism330dhcx_cs_low(dev);
 
+    /* Small CS setup delay for robust bring-up. */
+    for (volatile uint32_t i = 0u; i < 100u; i++)
+    {
+        __NOP();
+    }
+
     const HAL_StatusTypeDef status =
         HAL_SPI_Transmit(dev->hspi, tx, sizeof(tx), dev->timeout_ms);
 
@@ -94,6 +100,12 @@ static drv_ism330dhcx_result_t drv_ism330dhcx_read_regs(
     addr = (uint8_t)(start_reg | ISM330DHCX_SPI_READ_BIT);
 
     drv_ism330dhcx_cs_low(dev);
+
+    /* Small CS setup delay for robust bring-up. */
+    for (volatile uint32_t i = 0u; i < 100u; i++)
+    {
+        __NOP();
+    }
 
     HAL_StatusTypeDef status =
         HAL_SPI_Transmit(dev->hspi, &addr, 1u, dev->timeout_ms);

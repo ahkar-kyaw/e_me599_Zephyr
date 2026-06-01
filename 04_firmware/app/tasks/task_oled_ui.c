@@ -28,6 +28,7 @@ typedef enum
     OLED_UI_CMD_CLEAR,
     OLED_UI_CMD_SET_LINE,
     OLED_UI_CMD_CLEAR_LINE,
+    OLED_UI_CMD_SET_SCREEN,
     OLED_UI_CMD_SELECT_PAGE,
     OLED_UI_CMD_REDRAW,
     OLED_UI_CMD_ENABLE
@@ -40,6 +41,7 @@ typedef struct
     uint8_t page;
     bool flag;
     char text[TASK_OLED_UI_TEXT_MAX_LEN];
+    task_oled_ui_screen_t screen;
 } oled_ui_cmd_t;
 
 typedef struct
@@ -212,6 +214,22 @@ static void oled_ui_set_manual_line(uint8_t line, const char *text)
     s_state.dirty = true;
 }
 
+static void oled_ui_set_manual_screen(const task_oled_ui_screen_t screen)
+{
+    for (uint8_t line = 0u; line < TASK_OLED_UI_LINE_COUNT; line++)
+    {
+        strncpy(
+            s_state.manual_lines[line],
+            screen[line],
+            TASK_OLED_UI_LINE_MAX_LEN - 1u);
+
+        s_state.manual_lines[line][TASK_OLED_UI_LINE_MAX_LEN - 1u] = '\0';
+    }
+
+    s_state.active_page = TASK_OLED_UI_PAGE_LINES;
+    s_state.dirty = true;
+}
+
 static void oled_ui_apply_cmd(const oled_ui_cmd_t *cmd)
 {
     if (cmd == NULL)
@@ -238,6 +256,10 @@ static void oled_ui_apply_cmd(const oled_ui_cmd_t *cmd)
             }
 
             s_state.dirty = true;
+            break;
+
+        case OLED_UI_CMD_SET_SCREEN:
+            oled_ui_set_manual_screen(cmd->screen);
             break;
 
         case OLED_UI_CMD_SET_LINE:
@@ -500,6 +522,31 @@ bool task_oled_ui_printf(const char *format, ...)
     va_end(args);
 
     cmd.text[sizeof(cmd.text) - 1u] = '\0';
+
+    return oled_ui_post_cmd(&cmd);
+}
+
+bool task_oled_ui_set_screen(const task_oled_ui_screen_t screen)
+{
+    oled_ui_cmd_t cmd;
+
+    if (screen == NULL)
+    {
+        return false;
+    }
+
+    memset(&cmd, 0, sizeof(cmd));
+    cmd.id = OLED_UI_CMD_SET_SCREEN;
+
+    for (uint8_t line = 0u; line < TASK_OLED_UI_LINE_COUNT; line++)
+    {
+        strncpy(
+            cmd.screen[line],
+            screen[line],
+            TASK_OLED_UI_LINE_MAX_LEN - 1u);
+
+        cmd.screen[line][TASK_OLED_UI_LINE_MAX_LEN - 1u] = '\0';
+    }
 
     return oled_ui_post_cmd(&cmd);
 }

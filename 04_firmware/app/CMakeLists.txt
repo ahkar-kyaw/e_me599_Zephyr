@@ -12,6 +12,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/drivers/drv_ssd1306.c
     ${CMAKE_CURRENT_LIST_DIR}/drivers/drv_ism330dhcx.c
 
+    ${CMAKE_CURRENT_LIST_DIR}/tasks/task_log.c
     ${CMAKE_CURRENT_LIST_DIR}/tasks/task_crsf.c
     ${CMAKE_CURRENT_LIST_DIR}/tasks/task_oled_ui.c
     ${CMAKE_CURRENT_LIST_DIR}/tasks/task_imu.c
@@ -25,4 +26,4 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/tasks
 )
 
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE m)
+target_link_libraries(${CMAKE_PROJECT_NAME} m)
