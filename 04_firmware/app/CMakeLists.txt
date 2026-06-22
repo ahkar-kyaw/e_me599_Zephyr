@@ -1,29 +1,13 @@
-# User-owned application modules.
-# Folder is kept outside CubeMX ownership so regeneration does not overwrite
-# production drivers, protocol parsers, platform helpers, control logic, or
-# temporary test modules.
+# User-owned application sources.
+# This file is intentionally outside CubeMX generated code.
 
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/platform/dma_buffers.c
-
-    ${CMAKE_CURRENT_LIST_DIR}/proto/proto_crsf.c
-
-    ${CMAKE_CURRENT_LIST_DIR}/drivers/drv_crsf.c
-    ${CMAKE_CURRENT_LIST_DIR}/drivers/drv_ssd1306.c
-    ${CMAKE_CURRENT_LIST_DIR}/drivers/drv_ism330dhcx.c
-
-    ${CMAKE_CURRENT_LIST_DIR}/tasks/task_log.c
-    ${CMAKE_CURRENT_LIST_DIR}/tasks/task_crsf.c
-    ${CMAKE_CURRENT_LIST_DIR}/tasks/task_oled_ui.c
-    ${CMAKE_CURRENT_LIST_DIR}/tasks/task_imu.c
-    ${CMAKE_CURRENT_LIST_DIR}/tasks/task_app_ui.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/app_main.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/tasks/task_debug.c
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/platform
-    ${CMAKE_CURRENT_LIST_DIR}/proto
-    ${CMAKE_CURRENT_LIST_DIR}/drivers
-    ${CMAKE_CURRENT_LIST_DIR}/tasks
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/config
+    ${CMAKE_CURRENT_SOURCE_DIR}/tasks
 )
-
-target_link_libraries(${CMAKE_PROJECT_NAME} m)

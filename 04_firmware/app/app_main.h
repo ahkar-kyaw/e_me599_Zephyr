@@ -1,11 +1,11 @@
-#ifndef TASK_APP_UI_H
-#define TASK_APP_UI_H
+#ifndef APP_MAIN_H
+#define APP_MAIN_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void task_app_ui_start(void);
+void app_main_create_tasks(void);
 
 #ifdef __cplusplus
 }

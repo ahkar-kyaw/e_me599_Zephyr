@@ -26,13 +26,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "i2c.h"
-
-#include "task_log.h"
-#include "task_crsf.h"
-#include "task_imu.h"
-#include "task_oled_ui.h"
-#include "task_app_ui.h"
+#include "app_main.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -103,11 +97,7 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
-  (void)task_log_start();
-  (void)task_crsf_start();
-  task_imu_start();
-  (void)task_oled_ui_start(&hi2c1);
-  task_app_ui_start();
+  app_main_create_tasks();
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -129,7 +119,7 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    osDelay(1000);
   }
   /* USER CODE END StartDefaultTask */
 }
