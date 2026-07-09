@@ -1,7 +1,11 @@
 idf_component_register(
     SRCS
         "main.c"
+        "board/board_led.c"
+        "tests/test_debug_led.c"
     INCLUDE_DIRS
         "../include"
         "../../../common/include"
+        "board"
+        "tests"
 )

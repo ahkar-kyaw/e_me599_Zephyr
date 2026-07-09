@@ -3,14 +3,14 @@
 
 #include "driver/gpio.h"
 
-/*
- * Many ESP32 NodeMCU and DevKit boards connect the onboard LED to GPIO2.
- * If your board uses a different LED pin, change only this file.
- * If the LED is inverted, swap ACTIVE_LEVEL and INACTIVE_LEVEL.
- */
-#define BOARD_LED_GPIO             GPIO_NUM_2
-#define BOARD_LED_ACTIVE_LEVEL     1
-#define BOARD_LED_INACTIVE_LEVEL   0
-#define BOARD_LED_PERIOD_MS        500u
+#define BOARD_NAME          "ESP32 NodeMCU"
+#define BOARD_MCU_NAME      "ESP32"
+#define BOARD_PLATFORM_NAME "esp32"
+
+/* Board debug LED. */
+#define BOARD_DEBUG_LED1_GPIO            GPIO_NUM_2
+#define BOARD_DEBUG_LED_ACTIVE_LEVEL     1
+#define BOARD_DEBUG_LED_INACTIVE_LEVEL   0
+#define BOARD_DEBUG_LED_PERIOD_MS        500u
 
 #endif

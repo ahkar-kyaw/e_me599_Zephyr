@@ -57,6 +57,10 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define DBG_LED1_Pin GPIO_PIN_0
+#define DBG_LED1_GPIO_Port GPIOB
+#define DBG_LED3_Pin GPIO_PIN_14
+#define DBG_LED3_GPIO_Port GPIOB
 #define STLK_VCP_RX_Pin GPIO_PIN_8
 #define STLK_VCP_RX_GPIO_Port GPIOD
 #define STLK_VCP_TX_Pin GPIO_PIN_9
@@ -65,6 +69,8 @@ void Error_Handler(void);
 #define SWDIO_GPIO_Port GPIOA
 #define SWCLK_Pin GPIO_PIN_14
 #define SWCLK_GPIO_Port GPIOA
+#define DBG_LED2_Pin GPIO_PIN_1
+#define DBG_LED2_GPIO_Port GPIOE
 
 /* USER CODE BEGIN Private defines */
 

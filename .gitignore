@@ -1,178 +1,208 @@
+# =======================================================
+# Operating system files
+# =======================================================
 
-# KiCad temporary files
-*.kicad_sch-bak
-*.kicad_pcb-bak
-*.bak
-*.tmp
-*.lck
-*-backups/
-_autosave-*
+.DS_Store
+.AppleDouble
+.LSOverride
+__MACOSX/
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.localized
 
-# Build outputs
-04_firmware/build/
-04_firmware/cmake-build-*/
-04_firmware/Debug/
-04_firmware/Release/
 
-# CMake generated files
+# =======================================================
+# Editor and IDE local files
+# =======================================================
+
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+.idea/
+*.swp
+*.swo
+*~
+
+# STM32CubeIDE / Eclipse local project metadata
+**/.settings/
+**/.project
+**/.cproject
+
+# Keep CubeMX project metadata
+!*.ioc
+!*.mxproject
+
+
+# =======================================================
+# General build outputs
+# =======================================================
+
+build/
+cmake-build-*/
+Debug/
+Release/
+
 CMakeFiles/
 CMakeCache.txt
-cmake_install.cmake
-compile_commands.json
-
-# Firmware build products
-*.elf
-*.map
-*.hex
-*.bin
-*.list
-*.lst
-
-# -------------------------------------------------------
-# CMake.gitignore
-# -------------------------------------------------------
-
-CMakeLists.txt.user
-CMakeCache.txt
-CMakeFiles
-CMakeScripts
-Testing
-Makefile
+CMakeScripts/
 cmake_install.cmake
 install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
-_deps
 CMakeUserPresets.json
+.ninja_deps
+.ninja_log
+_deps/
 
-# -------------------------------------------------------
-# SolidWorks.gitignore
-# -------------------------------------------------------
 
+# =======================================================
+# Firmware build products
+# =======================================================
+
+*.elf
+*.map
+*.hex
+*.bin
+*.uf2
+*.list
+*.lst
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+*.dylib
+*.su
+
+# Keep source build configuration files
+!CMakeLists.txt
+!CMakePresets.json
+!*.ld
+!startup_*.s
+
+
+# =======================================================
+# PlatformIO / ESP32
+# =======================================================
+
+.pio/
+.pioenvs/
+.piolibdeps/
+
+04_firmware/platforms/esp32/.pio/
+
+# ESP32 local VS Code files
+04_firmware/platforms/esp32/.vscode/*
+!04_firmware/platforms/esp32/.vscode/extensions.json
+
+# ESP-IDF generated config
+04_firmware/platforms/esp32/sdkconfig.*
+!04_firmware/platforms/esp32/sdkconfig.defaults
+
+
+# =======================================================
+# STM32 generated build output
+# =======================================================
+
+04_firmware/platforms/stm32/build/
+04_firmware/build/
+
+
+# =======================================================
+# KiCad temporary and local files
+# =======================================================
+
+*.kicad_sch-bak
+*.kicad_pcb-bak
+*-backups/
+_autosave-*
+*.lck
+*.000
+*.bck
+*-cache*
+*-bak
+*-bak*
+fp-info-cache
+.history/
+*.kicad_prl
+
+# KiCad autorouter exports
+*.dsn
+*.ses
+
+# KiCad netlists
+*.net
+
+
+# =======================================================
 # SolidWorks temporary files
+# =======================================================
+
 ~$*.sldprt
 ~$*.sldasm
 ~$*.slddrw
 ~$*.sld
-
-# For systems with case-sensitive (SolidWorks uses both)
 ~$*.SLDPRT
 ~$*.SLDASM
 ~$*.SLDDRW
 ~$*.SLD
-
-# SolidWorks backups and auto-recovery
-*.bak
 *.swbak
 
-# Cache of simulation results
-/simulation_results/
 
-# -------------------------------------------------------
-# KiCad.gitignore
-# -------------------------------------------------------
+# =======================================================
+# Python
+# =======================================================
 
-# Temporary files
-*.000
-*.bak
-*.bck
-*.kicad_pcb-bak
-*.kicad_sch-bak
-*-backups
-*-cache*
-*-bak
-*-bak*
-*~
-~*
-_autosave-*
-\#auto_saved_files\#
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+
+# =======================================================
+# Logs and temporary files
+# =======================================================
+
+*.log
+tmp/
+temp/
 *.tmp
-*-save.pro
-*-save.kicad_pcb
-fp-info-cache
-~*.lck
-\#auto_saved_files#
+*.bak
+*.orig
 
-# Netlist files (exported from Eeschema)
-*.net
 
-# Autorouter files (exported from Pcbnew)
-*.dsn
-*.ses
+# =======================================================
+# MATLAB / Simulink temporary files
+# =======================================================
 
-# Exported BOM files
-*.xml
-*.csv
+*.asv
+*.m~
+slprj/
+*.slxc
 
-# Archived Backups (KiCad 6.0)
-**/*-backups/*.zip
 
-# Local git-based history (KiCad 9.0+)
-.history
+# =======================================================
+# LaTeX auxiliary files
+# =======================================================
 
-# Local project settings
-*.kicad_prl
-
-# -------------------------------------------------------
-# macOS.gitignore
-# -------------------------------------------------------
-
-# General
-.DS_Store
-.localized
-__MACOSX/
-.AppleDouble
-.LSOverride
-Icon[
-]
-
-# Resource forks
-._*
-
-# Files and directories that might appear in the root of a volume
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-.com.apple.timemachine.donotpresent
-.com.apple.timemachine.supported
-.PKInstallSandboxManager
-.PKInstallSandboxManager-SystemSoftware
-.hotfiles.btree
-.vol
-.file
-.disk_label*
-lost+found
-.HFS+ Private Directory Data[
-]
-
-# Directories potentially created on remote AFP share
-.AppleDB
-.AppleDesktop
-Network Trash Folder
-Temporary Items
-.apdisk
-
-# Mac OS 6 to 9
-Desktop DB
-Desktop DF
-TheFindByContentFolder
-TheVolumeSettingsFolder
-.FBCIndex
-.FBCSemaphoreFile
-.FBCLockFolder
-
-# Quota system
-.quota.group
-.quota.user
-.quota.ops.group
-.quota.ops.user
-
-# TimeMachine
-Backups.backupdb
-.MobileBackups
-.MobileBackups.trash
-MobileBackups.trash
-tmbootpicker.efi
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.lot
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.xdv
