@@ -94,6 +94,7 @@ _deps/
 .piolibdeps/
 
 04_firmware/platforms/esp32/.pio/
+04_firmware/platforms/esp32/.gitignore
 
 # ESP32 local VS Code files
 04_firmware/platforms/esp32/.vscode/*
