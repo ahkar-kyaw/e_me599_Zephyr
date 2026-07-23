@@ -2,10 +2,13 @@ idf_component_register(
     SRCS
         "main.c"
         "board/board_led.c"
+        "drivers/drv_ism330dhcx.c"
         "tests/test_debug_led.c"
+        "tests/test_imu_raw.c"
     INCLUDE_DIRS
         "../include"
         "../../../common/include"
         "board"
+        "drivers"
         "tests"
 )
