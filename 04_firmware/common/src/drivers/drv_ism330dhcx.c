@@ -19,6 +19,11 @@
 
 #define ISM330DHCX_RAW_BLOCK_LEN      14
 
+#define ISM330DHCX_ACCEL_MPS2_PER_LSB 0.0011964113f
+#define ISM330DHCX_GYRO_RPS_PER_LSB   0.0003054326f
+#define ISM330DHCX_TEMP_C_PER_LSB     0.00390625f
+#define ISM330DHCX_TEMP_C_OFFSET      25.0f
+
 static int16_t drv_i16_from_le(uint8_t lo, uint8_t hi)
 {
     return (int16_t)((uint16_t)lo | ((uint16_t)hi << 8));
@@ -165,4 +170,25 @@ int drv_ism330dhcx_read_raw(drv_ism330dhcx_t *dev, drv_ism330dhcx_raw_t *raw)
     raw->accel_raw[2] = drv_i16_from_le(data[12], data[13]);
 
     return DRV_ISM330DHCX_OK;
+}
+
+void drv_ism330dhcx_convert_raw(const drv_ism330dhcx_raw_t *raw,
+                                drv_ism330dhcx_data_t *data)
+{
+    if ((raw == 0) || (data == 0))
+    {
+        return;
+    }
+
+    for (uint32_t i = 0; i < 3; i++)
+    {
+        data->accel_mps2[i] = (float)raw->accel_raw[i] *
+                              ISM330DHCX_ACCEL_MPS2_PER_LSB;
+
+        data->gyro_rps[i] = (float)raw->gyro_raw[i] *
+                            ISM330DHCX_GYRO_RPS_PER_LSB;
+    }
+
+    data->temp_c = ISM330DHCX_TEMP_C_OFFSET +
+                   ((float)raw->temp_raw * ISM330DHCX_TEMP_C_PER_LSB);
 }
