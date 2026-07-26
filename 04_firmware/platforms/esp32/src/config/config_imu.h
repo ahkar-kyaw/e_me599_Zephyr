@@ -1,0 +1,14 @@
+#ifndef CONFIG_IMU_H
+#define CONFIG_IMU_H
+
+#define CONFIG_IMU_TASK_PERIOD_MS             10u
+#define CONFIG_IMU_CALIBRATION_SAMPLES        200u
+#define CONFIG_IMU_COMPLEMENTARY_ALPHA        0.98f
+
+#define CONFIG_IMU_MAX_AGE_US                 50000u
+#define CONFIG_IMU_MAX_ABS_ROLL_RAD           1.0471976f
+#define CONFIG_IMU_MAX_ABS_PITCH_RAD          1.0471976f
+#define CONFIG_IMU_MIN_ACCEL_NORM_MPS2        3.0f
+#define CONFIG_IMU_MAX_ACCEL_NORM_MPS2        20.0f
+
+#endif

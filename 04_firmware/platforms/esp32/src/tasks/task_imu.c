@@ -1,6 +1,7 @@
 #include "task_imu.h"
 
 #include "bsp_imu_spi_esp32.h"
+#include "config_imu.h"
 #include "drivers/drv_ism330dhcx.h"
 #include "estimation/est_attitude.h"
 #include "estimation/est_imu_calibration.h"
@@ -12,11 +13,9 @@
 
 #include <string.h>
 
-#define TASK_IMU_STACK_BYTES          4096u
-#define TASK_IMU_PRIORITY             (tskIDLE_PRIORITY + 3)
-#define TASK_IMU_PERIOD_MS            10u
-#define TASK_IMU_RETRY_MS             1000u
-#define TASK_IMU_CALIBRATION_SAMPLES  200u
+#define TASK_IMU_STACK_BYTES    4096u
+#define TASK_IMU_PRIORITY       (tskIDLE_PRIORITY + 3)
+#define TASK_IMU_RETRY_MS       1000u
 
 static const char *TAG = "task_imu";
 
@@ -113,9 +112,12 @@ static void task_imu_entry(void *argument)
         vTaskDelay(pdMS_TO_TICKS(TASK_IMU_RETRY_MS));
     }
 
-    est_imu_calibration_reset(&calibration, TASK_IMU_CALIBRATION_SAMPLES);
+    est_imu_calibration_reset(&calibration,
+                              CONFIG_IMU_CALIBRATION_SAMPLES);
 
     attitude_config = est_attitude_default_config();
+    attitude_config.complementary_alpha = CONFIG_IMU_COMPLEMENTARY_ALPHA;
+
     est_attitude_init(&attitude_estimator, &attitude_config);
 
     ESP_LOGI(TAG, "IMU task started");
@@ -207,6 +209,7 @@ static void task_imu_entry(void *argument)
 
         task_imu_publish_snapshot(&snapshot);
 
-        vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(TASK_IMU_PERIOD_MS));
+        vTaskDelayUntil(&last_wake,
+                        pdMS_TO_TICKS(CONFIG_IMU_TASK_PERIOD_MS));
     }
 }
