@@ -1,7 +1,7 @@
 #include "test_imu_snapshot.h"
 
+#include "app/app_balance_state.h"
 #include "config_imu.h"
-#include "control/ctrl_balance_types.h"
 #include "safety/safety_imu.h"
 #include "task_imu.h"
 
@@ -61,9 +61,9 @@ static void test_imu_snapshot_entry(void *argument)
                          &safety_config,
                          &imu_status);
 
-        ctrl_balance_state_from_imu(&snapshot,
-                                    &imu_status,
-                                    &balance_state);
+        app_balance_state_from_imu(&snapshot,
+                                   &imu_status,
+                                   &balance_state);
 
         ESP_LOGI(TAG,
                  "valid=%d calibrated=%d safe=%d faults=0x%08lx age_us=%llu sample=%lu errors=%lu",

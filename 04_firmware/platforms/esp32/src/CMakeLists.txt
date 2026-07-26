@@ -6,12 +6,12 @@ idf_component_register(
         "tasks/task_imu.c"
         "tests/test_debug_led.c"
         "tests/test_imu_snapshot.c"
+        "../../../common/src/app/app_balance_state.c"
         "../../../common/src/drivers/drv_ism330dhcx.c"
         "../../../common/src/estimation/est_imu_calibration.c"
         "../../../common/src/estimation/est_attitude.c"
         "../../../common/src/estimation/est_imu_mount.c"
         "../../../common/src/safety/safety_imu.c"
-        "../../../common/src/control/ctrl_balance_types.c"
     INCLUDE_DIRS
         "../include"
         "../../../common/include"

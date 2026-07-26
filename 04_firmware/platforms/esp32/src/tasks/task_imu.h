@@ -1,7 +1,7 @@
 #ifndef TASK_IMU_H
 #define TASK_IMU_H
 
-#include "app/imu_types.h"
+#include "app/app_imu_types.h"
 
 #ifdef __cplusplus
 extern "C" {

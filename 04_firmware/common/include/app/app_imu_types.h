@@ -1,5 +1,5 @@
-#ifndef IMU_TYPES_H
-#define IMU_TYPES_H
+#ifndef APP_IMU_TYPES_H
+#define APP_IMU_TYPES_H
 
 #include "drivers/drv_ism330dhcx.h"
 #include "estimation/est_attitude.h"

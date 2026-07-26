@@ -1,7 +1,7 @@
 #ifndef SAFETY_IMU_H
 #define SAFETY_IMU_H
 
-#include "app/imu_types.h"
+#include "app/app_imu_types.h"
 
 #include <stdbool.h>
 #include <stdint.h>

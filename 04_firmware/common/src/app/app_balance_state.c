@@ -1,10 +1,10 @@
-#include "control/ctrl_balance_types.h"
+#include "app/app_balance_state.h"
 
 #include <string.h>
 
-bool ctrl_balance_state_from_imu(const imu_snapshot_t *imu,
-                                 const safety_imu_status_t *imu_status,
-                                 balance_state_t *balance_state)
+bool app_balance_state_from_imu(const imu_snapshot_t *imu,
+                                const safety_imu_status_t *imu_status,
+                                balance_state_t *balance_state)
 {
     if ((imu == 0) || (imu_status == 0) || (balance_state == 0))
     {

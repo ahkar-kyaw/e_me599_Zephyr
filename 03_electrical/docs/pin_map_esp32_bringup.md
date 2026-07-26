@@ -1,0 +1,7 @@
+ESP32 IMU wiring:
+    GPIO18    SPI SCLK
+    GPIO19    SPI MISO
+    GPIO23    SPI MOSI
+    GPIO27    SPI CS
+    GPIO34    IMU INT1
+    GPIO35    IMU INT2
