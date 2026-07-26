@@ -42,11 +42,11 @@ static void test_imu_snapshot_entry(void *argument)
 
     safety_imu_config_t safety_config = safety_imu_default_config();
 
-    safety_config.max_age_us = CONFIG_IMU_MAX_AGE_US;
-    safety_config.max_abs_roll_rad = CONFIG_IMU_MAX_ABS_ROLL_RAD;
-    safety_config.max_abs_pitch_rad = CONFIG_IMU_MAX_ABS_PITCH_RAD;
-    safety_config.min_accel_norm_mps2 = CONFIG_IMU_MIN_ACCEL_NORM_MPS2;
-    safety_config.max_accel_norm_mps2 = CONFIG_IMU_MAX_ACCEL_NORM_MPS2;
+    safety_config.max_age_us = APP_IMU_MAX_AGE_US;
+    safety_config.max_abs_roll_rad = APP_IMU_MAX_ABS_ROLL_RAD;
+    safety_config.max_abs_pitch_rad = APP_IMU_MAX_ABS_PITCH_RAD;
+    safety_config.min_accel_norm_mps2 = APP_IMU_MIN_ACCEL_NORM_MPS2;
+    safety_config.max_accel_norm_mps2 = APP_IMU_MAX_ACCEL_NORM_MPS2;
 
     for (;;)
     {

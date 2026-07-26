@@ -103,8 +103,8 @@ static void task_imu_entry(void *argument)
     task_imu_publish_invalid(0u);
 
     mount_config = est_imu_mount_default_config();
-    mount_config.body_forward = CONFIG_IMU_MOUNT_FORWARD_AXIS;
-    mount_config.body_up = CONFIG_IMU_MOUNT_UP_AXIS;
+    mount_config.body_forward = APP_IMU_MOUNT_FORWARD_AXIS;
+    mount_config.body_up = APP_IMU_MOUNT_UP_AXIS;
 
     if (!est_imu_mount_init(&imu_mount, &mount_config))
     {
@@ -124,10 +124,10 @@ static void task_imu_entry(void *argument)
     }
 
     imu_config = drv_ism330dhcx_default_config();
-    imu_config.accel_odr = CONFIG_IMU_ACCEL_ODR;
-    imu_config.gyro_odr = CONFIG_IMU_GYRO_ODR;
-    imu_config.accel_fs = CONFIG_IMU_ACCEL_FS;
-    imu_config.gyro_fs = CONFIG_IMU_GYRO_FS;
+    imu_config.accel_odr = APP_IMU_ACCEL_ODR;
+    imu_config.gyro_odr = APP_IMU_GYRO_ODR;
+    imu_config.accel_fs = APP_IMU_ACCEL_FS;
+    imu_config.gyro_fs = APP_IMU_GYRO_FS;
 
     while (drv_ism330dhcx_init_config(&imu,
                                       &imu_spi.spi,
@@ -141,13 +141,13 @@ static void task_imu_entry(void *argument)
     }
 
     est_imu_calibration_reset(&calibration,
-                              CONFIG_IMU_CALIBRATION_SAMPLES);
+                              APP_IMU_CALIBRATION_SAMPLES);
 
     attitude_config = est_attitude_default_config();
-    attitude_config.algorithm = CONFIG_IMU_ATTITUDE_ALGORITHM;
-    attitude_config.sensor_mode = CONFIG_IMU_ATTITUDE_SENSOR_MODE;
-    attitude_config.complementary_alpha = CONFIG_IMU_COMPLEMENTARY_ALPHA;
-    attitude_config.complementary_mag_alpha = CONFIG_IMU_COMPLEMENTARY_MAG_ALPHA;
+    attitude_config.algorithm = APP_IMU_ATTITUDE_ALGORITHM;
+    attitude_config.sensor_mode = APP_IMU_ATTITUDE_SENSOR_MODE;
+    attitude_config.complementary_alpha = APP_IMU_COMPLEMENTARY_ALPHA;
+    attitude_config.complementary_mag_alpha = APP_IMU_COMPLEMENTARY_MAG_ALPHA;
 
     est_attitude_init(&attitude_estimator, &attitude_config);
 
@@ -187,7 +187,7 @@ static void task_imu_entry(void *argument)
                 task_imu_publish_snapshot(&snapshot);
 
                 vTaskDelayUntil(&last_wake,
-                                pdMS_TO_TICKS(CONFIG_IMU_TASK_PERIOD_MS));
+                                pdMS_TO_TICKS(APP_IMU_TASK_PERIOD_MS));
                 continue;
             }
 
@@ -267,6 +267,6 @@ static void task_imu_entry(void *argument)
         task_imu_publish_snapshot(&snapshot);
 
         vTaskDelayUntil(&last_wake,
-                        pdMS_TO_TICKS(CONFIG_IMU_TASK_PERIOD_MS));
+                        pdMS_TO_TICKS(APP_IMU_TASK_PERIOD_MS));
     }
 }
