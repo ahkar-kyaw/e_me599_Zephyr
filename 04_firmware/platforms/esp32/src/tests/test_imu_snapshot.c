@@ -76,7 +76,7 @@ static void test_imu_snapshot_entry(void *argument)
                  (unsigned long)snapshot.read_error_count);
 
         ESP_LOGI(TAG,
-                 "accel_norm=%7.3f m/s2 accel [%7.3f %7.3f %7.3f] gyro [%8.5f %8.5f %8.5f] rps",
+                 "body accel_norm=%7.3f m/s2 accel [%7.3f %7.3f %7.3f] gyro [%8.5f %8.5f %8.5f] rps",
                  imu_status.accel_norm_mps2,
                  snapshot.data.accel_mps2[0],
                  snapshot.data.accel_mps2[1],

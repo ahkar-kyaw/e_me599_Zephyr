@@ -5,6 +5,7 @@
 #include "drivers/drv_ism330dhcx.h"
 #include "estimation/est_attitude.h"
 #include "estimation/est_imu_calibration.h"
+#include "estimation/est_imu_mount.h"
 
 #include "esp_log.h"
 #include "esp_timer.h"
@@ -81,7 +82,13 @@ static void task_imu_entry(void *argument)
 
     bsp_imu_spi_esp32_t imu_spi;
     drv_ism330dhcx_t imu;
+    drv_ism330dhcx_config_t imu_config;
+
+    est_imu_mount_t imu_mount;
+    est_imu_mount_config_t mount_config;
+
     est_imu_calibration_t calibration;
+
     est_attitude_t attitude_estimator;
     est_attitude_config_t attitude_config;
 
@@ -91,8 +98,21 @@ static void task_imu_entry(void *argument)
 
     memset(&imu_spi, 0, sizeof(imu_spi));
     memset(&imu, 0, sizeof(imu));
+    memset(&imu_mount, 0, sizeof(imu_mount));
 
     task_imu_publish_invalid(0u);
+
+    mount_config = est_imu_mount_default_config();
+    mount_config.body_forward = CONFIG_IMU_MOUNT_FORWARD_AXIS;
+    mount_config.body_up = CONFIG_IMU_MOUNT_UP_AXIS;
+
+    if (!est_imu_mount_init(&imu_mount, &mount_config))
+    {
+        ESP_LOGE(TAG, "invalid IMU mount config");
+        task_imu_publish_invalid(1u);
+        vTaskDelete(NULL);
+        return;
+    }
 
     while (bsp_imu_spi_esp32_init(&imu_spi) != IF_SPI_OK)
     {
@@ -103,7 +123,15 @@ static void task_imu_entry(void *argument)
         vTaskDelay(pdMS_TO_TICKS(TASK_IMU_RETRY_MS));
     }
 
-    while (drv_ism330dhcx_init(&imu, &imu_spi.spi) != DRV_ISM330DHCX_OK)
+    imu_config = drv_ism330dhcx_default_config();
+    imu_config.accel_odr = CONFIG_IMU_ACCEL_ODR;
+    imu_config.gyro_odr = CONFIG_IMU_GYRO_ODR;
+    imu_config.accel_fs = CONFIG_IMU_ACCEL_FS;
+    imu_config.gyro_fs = CONFIG_IMU_GYRO_FS;
+
+    while (drv_ism330dhcx_init_config(&imu,
+                                      &imu_spi.spi,
+                                      &imu_config) != DRV_ISM330DHCX_OK)
     {
         read_error_count++;
         task_imu_publish_invalid(read_error_count);
@@ -116,7 +144,10 @@ static void task_imu_entry(void *argument)
                               CONFIG_IMU_CALIBRATION_SAMPLES);
 
     attitude_config = est_attitude_default_config();
+    attitude_config.algorithm = CONFIG_IMU_ATTITUDE_ALGORITHM;
+    attitude_config.sensor_mode = CONFIG_IMU_ATTITUDE_SENSOR_MODE;
     attitude_config.complementary_alpha = CONFIG_IMU_COMPLEMENTARY_ALPHA;
+    attitude_config.complementary_mag_alpha = CONFIG_IMU_COMPLEMENTARY_MAG_ALPHA;
 
     est_attitude_init(&attitude_estimator, &attitude_config);
 
@@ -128,14 +159,37 @@ static void task_imu_entry(void *argument)
     for (;;)
     {
         imu_snapshot_t snapshot;
+        drv_ism330dhcx_data_t sensor_data;
 
         memset(&snapshot, 0, sizeof(snapshot));
+        memset(&sensor_data, 0, sizeof(sensor_data));
 
         snapshot.timestamp_us = (uint64_t)esp_timer_get_time();
 
         if (drv_ism330dhcx_read_raw(&imu, &snapshot.raw) == DRV_ISM330DHCX_OK)
         {
-            drv_ism330dhcx_convert_raw(&snapshot.raw, &snapshot.data);
+            drv_ism330dhcx_convert_raw(&imu,
+                                       &snapshot.raw,
+                                       &sensor_data);
+
+            if (!est_imu_mount_apply_data(&imu_mount,
+                                          &sensor_data,
+                                          &snapshot.data))
+            {
+                read_error_count++;
+
+                snapshot.valid = false;
+                snapshot.calibrated = false;
+                snapshot.sample_count = sample_count;
+                snapshot.read_error_count = read_error_count;
+
+                ESP_LOGE(TAG, "IMU mount mapping failed");
+                task_imu_publish_snapshot(&snapshot);
+
+                vTaskDelayUntil(&last_wake,
+                                pdMS_TO_TICKS(CONFIG_IMU_TASK_PERIOD_MS));
+                continue;
+            }
 
             sample_count++;
 
@@ -171,12 +225,15 @@ static void task_imu_entry(void *argument)
 
                 est_attitude_input_t attitude_input;
 
+                memset(&attitude_input, 0, sizeof(attitude_input));
+
                 for (uint32_t i = 0u; i < 3u; i++)
                 {
                     attitude_input.accel_mps2[i] = snapshot.data.accel_mps2[i];
                     attitude_input.gyro_rps[i] = snapshot.data.gyro_rps[i];
                 }
 
+                attitude_input.mag_valid = false;
                 attitude_input.dt_s = dt_s;
 
                 snapshot.attitude.valid =

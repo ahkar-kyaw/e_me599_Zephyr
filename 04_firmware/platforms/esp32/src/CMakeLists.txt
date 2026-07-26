@@ -9,6 +9,7 @@ idf_component_register(
         "../../../common/src/drivers/drv_ism330dhcx.c"
         "../../../common/src/estimation/est_imu_calibration.c"
         "../../../common/src/estimation/est_attitude.c"
+        "../../../common/src/estimation/est_imu_mount.c"
         "../../../common/src/safety/safety_imu.c"
         "../../../common/src/control/ctrl_balance_types.c"
     INCLUDE_DIRS

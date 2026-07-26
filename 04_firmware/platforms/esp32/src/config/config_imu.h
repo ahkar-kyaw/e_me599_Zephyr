@@ -1,9 +1,25 @@
 #ifndef CONFIG_IMU_H
 #define CONFIG_IMU_H
 
+#include "drivers/drv_ism330dhcx.h"
+#include "estimation/est_attitude.h"
+#include "estimation/est_imu_mount.h"
+
 #define CONFIG_IMU_TASK_PERIOD_MS             10u
 #define CONFIG_IMU_CALIBRATION_SAMPLES        200u
+
+#define CONFIG_IMU_ACCEL_ODR                  DRV_ISM330DHCX_ODR_208_HZ
+#define CONFIG_IMU_GYRO_ODR                   DRV_ISM330DHCX_ODR_208_HZ
+#define CONFIG_IMU_ACCEL_FS                   DRV_ISM330DHCX_ACCEL_FS_4G
+#define CONFIG_IMU_GYRO_FS                    DRV_ISM330DHCX_GYRO_FS_500_DPS
+
+#define CONFIG_IMU_MOUNT_FORWARD_AXIS         EST_IMU_AXIS_SENSOR_X_POS
+#define CONFIG_IMU_MOUNT_UP_AXIS              EST_IMU_AXIS_SENSOR_Z_POS
+
+#define CONFIG_IMU_ATTITUDE_ALGORITHM         EST_ATTITUDE_ALGORITHM_COMPLEMENTARY
+#define CONFIG_IMU_ATTITUDE_SENSOR_MODE       EST_ATTITUDE_SENSOR_MODE_6DOF
 #define CONFIG_IMU_COMPLEMENTARY_ALPHA        0.98f
+#define CONFIG_IMU_COMPLEMENTARY_MAG_ALPHA    0.98f
 
 #define CONFIG_IMU_MAX_AGE_US                 50000u
 #define CONFIG_IMU_MAX_ABS_ROLL_RAD           1.0471976f
