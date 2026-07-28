@@ -21,12 +21,14 @@ common/
         app/
             app_balance_state.h
             app_imu_types.h
+            app_rc_types.h
 
         control/
             ctrl_balance_types.h
 
         drivers/
             drv_ism330dhcx.h
+            drv_ssd1306.h
 
         estimation/
             est_attitude.h
@@ -34,10 +36,15 @@ common/
             est_imu_mount.h
 
         interfaces/
+            if_i2c.h
             if_spi.h
+
+        protocols/
+            proto_crsf.h
 
         safety/
             safety_imu.h
+            safety_rc.h
 
     src/
         app/
@@ -45,14 +52,19 @@ common/
 
         drivers/
             drv_ism330dhcx.c
+            drv_ssd1306.c
 
         estimation/
             est_attitude.c
             est_imu_calibration.c
             est_imu_mount.c
 
+        protocols/
+            proto_crsf.c
+
         safety/
             safety_imu.c
+            safety_rc.c
 ```
 
 ## Module responsibilities
@@ -63,6 +75,10 @@ common/
 if_spi
     Defines a generic SPI transfer function.
     Allows common drivers to use SPI without knowing the MCU backend.
+
+if_i2c
+    Defines a generic addressed I2C write function.
+    Allows common drivers to use I2C without knowing the MCU backend.
 ```
 
 ### drivers
@@ -74,6 +90,21 @@ drv_ism330dhcx
     Configures ODR and full-scale settings.
     Reads raw temperature, gyro, and accelerometer data.
     Converts raw counts to SI units using the active driver configuration.
+
+drv_ssd1306
+    Portable 128 x 32 or 128 x 64 SSD1306 framebuffer driver.
+    Owns controller initialization, pixels, compact text, and display
+    transfers through if_i2c.
+```
+
+### protocols
+
+```text
+proto_crsf
+    Parses a CRSF byte stream.
+    Validates DVB-S2 CRC-8.
+    Unpacks all 16 11-bit RC channels.
+    Tracks valid-frame, CRC-error, and parse-error counts.
 ```
 
 ### estimation
@@ -103,6 +134,10 @@ est_attitude
 safety_imu
     Checks whether the IMU data is safe for balance use.
     Checks validity, calibration, attitude validity, timestamp freshness, tilt, and acceleration magnitude.
+
+safety_rc
+    Checks RC snapshot validity, freshness, and raw channel range.
+    Does not grant whole-system permission to move.
 ```
 
 ### control
@@ -119,6 +154,10 @@ ctrl_balance_types
 app_imu_types
     Defines imu_snapshot_t.
     This is the shared IMU state published by platform tasks.
+
+app_rc_types
+    Defines rc_snapshot_t with all 16 raw CRSF channels, timestamp,
+    validity, and communication error counters.
 
 app_balance_state
     Converts imu_snapshot_t and safety_imu_status_t into balance_state_t.

@@ -72,52 +72,78 @@ CAN connector pinout
 Termination strategy
 ```
 
-### RC receiver
+### RadioMaster RP2 ExpressLRS receiver
 
 ```text
 Purpose
     Receive user commands through CRSF.
 
-Expected interface
-    UART RX from receiver TX
-    Optional UART TX to receiver RX
-    3.3 V logic level unless verified otherwise
+ESP32 interface
+    UART2
+    GPIO16 receives from RP2 TX
+    GPIO17 transmits to RP2 RX
+    420000 baud, 8N1
+    Non-inverted, full-duplex CRSF
+
+Power
+    RP2 VCC uses regulated 5 V
+    RP2 GND and ESP32 GND must be common
 ```
 
-Document these when assigned:
+The current firmware receives RC channel frames on GPIO16. GPIO17 is
+assigned and should be wired for future CRSF telemetry, but the firmware
+does not transmit telemetry yet.
 
 ```text
-MCU UART instance
-MCU RX pin
-MCU TX pin
-Receiver supply voltage
-Connector pinout
-Failsafe behavior
+Suggested connector pinout
+    Pin 1    5 V
+    Pin 2    GND
+    Pin 3    RP2 TX / ESP32 GPIO16
+    Pin 4    RP2 RX / ESP32 GPIO17
 ```
 
-### OLED display
+RC link freshness is checked in firmware. A fresh RC link alone must
+never grant permission to move; the safety subsystem must also approve
+system mode, IMU state, motor state, battery state, and other required
+conditions.
+
+Keep the receiver and antenna away from motor phase wires, high-current
+battery wiring, switching regulators, and the CAN transceiver. Add local
+supply decoupling near the receiver connector.
+
+### SSD1306 OLED display
 
 ```text
 Purpose
     Local status and debug UI.
 
-Expected interface
-    I2C SDA
-    I2C SCL
-    3.3 V supply
-    Pull-up resistors on SDA and SCL
+ESP32 interface
+    I2C port 0
+    SDA on GPIO21
+    SCL on GPIO22
+    400 kHz
+    7-bit address 0x3C
+
+Power
+    OLED VCC uses 3.3 V
+    OLED GND and ESP32 GND must be common
 ```
 
-Document these when assigned:
+The selected bring-up configuration is a 128 x 64 SSD1306 module. Power
+the module from 3.3 V so any onboard I2C pull-ups also pull to 3.3 V.
+Verify the actual module address; some variants use `0x3D`.
 
 ```text
-MCU I2C instance
-SDA pin
-SCL pin
-I2C address
-Pull-up values
-Connector pinout
+Suggested connector pinout
+    Pin 1    3.3 V
+    Pin 2    GND
+    Pin 3    SCL / GPIO22
+    Pin 4    SDA / GPIO21
 ```
+
+Use one effective set of I2C pull-ups. Start with 4.7 kohm to 3.3 V if
+the module has none. Keep SDA and SCL short and route them away from
+motor and battery conductors.
 
 ### Battery sensing
 
@@ -174,3 +200,12 @@ Document termination and protection components for bus interfaces.
 Avoid routing high motor current through logic or IMU ground paths.
 Keep sensor supply and ground clean where practical.
 ```
+
+## STM32 migration note
+
+The STM32H723ZG OLED I2C instance, CRSF UART instance, pins, DMA
+channels, connector assignments, and power rails are not assigned yet.
+Do not copy ESP32 GPIO numbers or edit generated CubeMX files by hand.
+Assign the peripherals in CubeMX, regenerate generated code, and add
+STM32 BSP implementations behind the existing portable protocol,
+driver, and snapshot boundaries.

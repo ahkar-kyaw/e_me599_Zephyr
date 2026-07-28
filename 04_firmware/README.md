@@ -1,6 +1,9 @@
 # Zephyr firmware
 
-Zephyr firmware is organized to support an ESP32 bring-up platform and an STM32H723ZG target platform while keeping reusable robot logic portable. The firmware is split into a common layer and platform-specific layers.
+Zephyr firmware is organized to support an ESP32 bring-up platform and
+an STM32H723ZG target platform while keeping reusable robot logic
+portable. The active ESP32 target includes the IMU pipeline, a
+16-channel CRSF receiver path, and an SSD1306 status display.
 
 ## Current targets
 
@@ -66,6 +69,18 @@ test_imu_snapshot
     runs IMU safety checks
     extracts balance_state_t
     prints the full IMU pipeline
+
+task_rc
+    owns UART2 and receives RadioMaster RP2 CRSF data
+    publishes all 16 raw channels with timestamps and error counters
+
+task_ui
+    owns the SSD1306 I2C display
+    shows receiver freshness and all channels across two pages
+
+test_rc_snapshot
+    performs bring-up logging for all 16 channels
+    applies portable RC freshness and range checks
 ```
 
 ## Common firmware flow
@@ -73,6 +88,18 @@ test_imu_snapshot
 ```text
 if_spi
     generic SPI transfer interface
+
+if_i2c
+    generic addressed I2C write interface
+
+proto_crsf
+    portable CRSF stream parser and 16-channel unpacker
+
+drv_ssd1306
+    portable SSD1306 framebuffer and text driver
+
+safety_rc
+    checks RC validity, freshness, and raw channel range
 
 drv_ism330dhcx
     portable ISM330DHCX register driver
@@ -125,6 +152,12 @@ APP_ENABLE_BRINGUP_TESTS
     Enables temporary bring-up tests.
     ESP32 sets this in platformio.ini.
     STM32 sets this in CMakePresets.json.
+
+APP_ENABLE_RC_RECEIVER
+    Starts the ESP32 CRSF receiver task.
+
+APP_ENABLE_OLED_UI
+    Starts the ESP32 SSD1306 UI task.
 ```
 
 ## Development rules

@@ -21,6 +21,7 @@ Platform BSP
 
 Common app glue
     app_imu_types
+    app_rc_types
     app_balance_state
 
 Common subsystem logic
@@ -33,7 +34,8 @@ Common subsystem logic
 
 Common interfaces
     if_spi
-    future if_can, if_i2c, if_uart, if_time
+    if_i2c
+    future if_can, if_uart, if_time
 ```
 
 ## Current IMU pipeline
@@ -73,12 +75,67 @@ imu_snapshot_t
         balance_state_t
 ```
 
+## Current RC pipeline
+
+```text
+RP2 ExpressLRS receiver
+    |
+    v
+ESP32 UART2
+    |
+    v
+bsp_crsf_uart_esp32
+    |
+    v
+proto_crsf
+    |
+    v
+rc_snapshot_t with all 16 channels
+    |
+    +--> safety_rc_check
+    |
+    +--> UI and future supervisor/control input mapping
+```
+
+`task_rc` owns the UART and publishes the latest timestamped snapshot.
+The protocol parser is portable and contains no ESP-IDF, FreeRTOS, pin,
+or board dependencies.
+
+## Current OLED pipeline
+
+```text
+ESP32 I2C pins
+    |
+    v
+bsp_oled_i2c_esp32
+    |
+    v
+if_i2c_t
+    |
+    v
+drv_ssd1306
+    |
+    v
+task_ui
+```
+
+`task_ui` owns the OLED. It may read subsystem snapshots and present
+status, but it does not own safety state or motion commands.
+
 ## Ownership rules
 
 ```text
 task_imu
     Owns IMU hardware access.
     Publishes the latest IMU snapshot.
+
+task_rc
+    Owns CRSF UART access.
+    Publishes the latest 16-channel RC snapshot.
+
+task_ui
+    Owns the SSD1306 display.
+    Reads snapshots and displays status.
 
 drv_ism330dhcx
     Owns ISM330DHCX register operations and raw-data conversion.
@@ -94,6 +151,9 @@ est_attitude
 
 safety_imu
     Owns IMU-level validity and freshness checks.
+
+safety_rc
+    Owns RC validity, freshness, and raw channel-range checks.
 
 app_balance_state
     Owns the conversion from IMU and safety status to control-facing balance state.
