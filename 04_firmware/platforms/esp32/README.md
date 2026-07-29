@@ -128,7 +128,9 @@ task_rc
 
 task_ui
     Owns the OLED.
-    Shows RC status and alternates between channels 1-8 and 9-16.
+    Collects RC and IMU snapshots.
+    Runs the portable UI input mapper and state machine.
+    Renders STATUS, CRSF, and IMU pages.
     Does not own safety state or motion commands.
 ```
 
@@ -160,7 +162,20 @@ config_rc.h
 
 config_ui.h
     SSD1306 geometry, address, orientation, contrast, and UI timing.
+    One-based RC channel assignments and input thresholds.
 ```
+
+Current UI mapping:
+
+```text
+CH1 Ail    previous/next page in browse mode
+           previous/next subpage in interact mode
+CH6 SD     interaction off/on
+CH7 SE     Enter
+```
+
+See `04_firmware/docs/ui_subsystem.md` for UI behavior, channel
+reassignment, CRSF raw ranges, and the future tuning boundary.
 
 Body frame convention:
 

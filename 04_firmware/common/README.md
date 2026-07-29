@@ -46,6 +46,12 @@ common/
             safety_imu.h
             safety_rc.h
 
+        ui/
+            ui_pages.h
+            ui_rc_input.h
+            ui_state.h
+            ui_types.h
+
     src/
         app/
             app_balance_state.c
@@ -65,6 +71,11 @@ common/
         safety/
             safety_imu.c
             safety_rc.c
+
+        ui/
+            ui_pages.c
+            ui_rc_input.c
+            ui_state.c
 ```
 
 ## Module responsibilities
@@ -148,6 +159,21 @@ ctrl_balance_types
     Does not depend on IMU or safety modules.
 ```
 
+### ui
+
+```text
+ui_rc_input
+    Converts configured RC channels into left, right, interaction,
+    Enter, and link-loss events.
+
+ui_state
+    Portable browse/interact state machine.
+    Owns the current page and subpage.
+
+ui_pages
+    Renders read-only STATUS, CRSF, and IMU pages through drv_ssd1306.
+```
+
 ### app
 
 ```text
@@ -184,6 +210,9 @@ control
 
 app
     allowed to connect subsystem types together
+
+ui
+    reads app and safety snapshots and uses the portable display driver
 ```
 
 ## Common-layer rules

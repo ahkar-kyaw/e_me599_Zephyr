@@ -10,10 +10,11 @@ Application startup
 
 Platform tasks
     task_imu
+    task_rc
+    task_ui
     future task_control
     future task_safety
     future task_motor
-    future task_ui
     future task_log
 
 Platform BSP
@@ -94,7 +95,12 @@ rc_snapshot_t with all 16 channels
     |
     +--> safety_rc_check
     |
-    +--> UI and future supervisor/control input mapping
+    +--> ui_rc_input
+    |       |
+    |       v
+    |   semantic UI events
+    |
+    +--> future supervisor/control input mapping
 ```
 
 `task_rc` owns the UART and publishes the latest timestamped snapshot.
@@ -116,11 +122,22 @@ if_i2c_t
 drv_ssd1306
     |
     v
+ui_pages
+    ^
+    |
+ui_state <--- ui_rc_input
+    ^
+    |
+RC and IMU snapshots
+    |
+    v
 task_ui
 ```
 
 `task_ui` owns the OLED. It may read subsystem snapshots and present
-status, but it does not own safety state or motion commands.
+status, but it does not own safety state or motion commands. Portable UI
+input mapping, browse/interact state, and page rendering remain in
+`common/`.
 
 ## Ownership rules
 
@@ -135,7 +152,16 @@ task_rc
 
 task_ui
     Owns the SSD1306 display.
-    Reads snapshots and displays status.
+    Reads snapshots, updates the portable UI state, and displays status.
+
+ui_rc_input
+    Owns channel mapping, thresholds, hysteresis, and input re-arming.
+
+ui_state
+    Owns browse/interact mode, page, subpage, and Enter events.
+
+ui_pages
+    Owns read-only STATUS, CRSF, and IMU page formatting.
 
 drv_ism330dhcx
     Owns ISM330DHCX register operations and raw-data conversion.

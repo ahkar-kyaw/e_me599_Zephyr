@@ -20,6 +20,9 @@ idf_component_register(
         "../../../common/src/protocols/proto_crsf.c"
         "../../../common/src/safety/safety_imu.c"
         "../../../common/src/safety/safety_rc.c"
+        "../../../common/src/ui/ui_pages.c"
+        "../../../common/src/ui/ui_rc_input.c"
+        "../../../common/src/ui/ui_state.c"
     INCLUDE_DIRS
         "../include"
         "../../../common/include"

@@ -26,6 +26,9 @@ ctrl_
 safety_
     Safety checks, fault checks, and motion permission logic.
 
+ui_
+    User-interface input mapping, state machines, and rendering.
+
 proto_
     Protocol parsers and encoders.
 

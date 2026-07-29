@@ -76,7 +76,8 @@ task_rc
 
 task_ui
     owns the SSD1306 I2C display
-    shows receiver freshness and all channels across two pages
+    shows STATUS, CRSF, and IMU pages
+    uses a portable browse/interact UI state machine
 
 test_rc_snapshot
     performs bring-up logging for all 16 channels
@@ -100,6 +101,15 @@ drv_ssd1306
 
 safety_rc
     checks RC validity, freshness, and raw channel range
+
+ui_rc_input
+    maps reassignable CRSF channels to semantic UI events
+
+ui_state
+    owns browse/interact mode, page, and subpage
+
+ui_pages
+    renders portable read-only OLED pages
 
 drv_ism330dhcx
     portable ISM330DHCX register driver
@@ -196,6 +206,9 @@ Do not let UI, tests, or control write directly to motors.
 
 04_firmware/docs/imu_subsystem.md
     IMU driver, calibration, mounting, estimator, safety, and balance-state pipeline.
+
+04_firmware/docs/ui_subsystem.md
+    OLED pages, RC controls, UI state machine, CRSF ranges, and future tuning boundary.
 
 04_firmware/docs/electrical_interfaces.md
     Firmware-facing electrical interface notes and pin maps.
