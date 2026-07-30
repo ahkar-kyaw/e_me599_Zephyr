@@ -1,21 +1,20 @@
 # ESP32 platform firmware
 
-The ESP32 platform is the active bring-up target. It uses PlatformIO
-with ESP-IDF and runs the IMU pipeline, CRSF receiver, and SSD1351
-status UI.
+The ESP32 platform is the active bring-up target. It uses native
+ESP-IDF with CMake and Ninja and runs the IMU pipeline, CRSF receiver,
+and SSD1351 status UI.
 
 ## Structure
 
 ```text
 platforms/esp32/
     CMakeLists.txt
-    platformio.ini
     sdkconfig.defaults
 
     include/
         board_esp32_nodemcu_v1.h
 
-    src/
+    main/
         CMakeLists.txt
         main.c
 
@@ -53,15 +52,34 @@ platforms/esp32/
             test_rc_snapshot.h
 ```
 
-## Build and upload
+## Toolchain
+
+The current firmware is validated with Espressif's ESP-IDF `v5.5`
+release tag. Activate the ESP-IDF environment before running any
+`idf.py` command:
+
+```bash
+. ~/esp/esp-idf-v5.5/export.sh
+```
+
+The generated `sdkconfig` and `build/` directory are local build
+artifacts. Project-owned defaults belong in `sdkconfig.defaults`.
+
+## Configure, build, and upload
 
 Run from the repository root.
 
 ```bash
-pio run -d 04_firmware/platforms/esp32
-pio run -d 04_firmware/platforms/esp32 -t upload
-pio device monitor -d 04_firmware/platforms/esp32 -b 115200
+cd 04_firmware/platforms/esp32
+idf.py set-target esp32
+idf.py build
+idf.py -p /dev/cu.usbserial-XXXX flash monitor
 ```
+
+`idf.py set-target esp32` is required after cloning or when resetting
+the generated configuration. It does not need to run before every
+build. Use `idf.py menuconfig` for interactive ESP-IDF configuration.
+Exit the serial monitor with `Ctrl+]`.
 
 ## Build-time flags
 
@@ -76,6 +94,7 @@ APP_ENABLE_BRINGUP_TESTS
 `APP_ENABLE_RC_RECEIVER` starts the receiver task.
 `APP_ENABLE_UI` starts the display task.
 `APP_ENABLE_BRINGUP_TESTS` starts the LED, IMU, and RC diagnostic tasks.
+The current values are defined in `main/CMakeLists.txt`.
 
 ## Board pin map
 

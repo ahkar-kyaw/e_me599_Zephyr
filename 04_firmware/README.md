@@ -9,7 +9,7 @@ portable. The active ESP32 target includes the IMU pipeline, a
 
 | Target | Purpose | Toolchain |
 | --- | --- | --- |
-| ESP32 NodeMCU | Prototype bring-up and hardware validation | PlatformIO with ESP-IDF |
+| ESP32 NodeMCU | Prototype bring-up and hardware validation | ESP-IDF, CMake, and Ninja |
 | STM32H723ZG Nucleo | Final target platform | STM32CubeMX, CMake, Ninja, Arm GNU Toolchain |
 
 ## Repository layout
@@ -137,13 +137,19 @@ ctrl_balance_types
 
 ## ESP32 build commands
 
-Run these from the repository root.
+Activate the ESP-IDF environment, then run these from the repository
+root.
 
 ```bash
-pio run -d 04_firmware/platforms/esp32
-pio run -d 04_firmware/platforms/esp32 -t upload
-pio device monitor -d 04_firmware/platforms/esp32 -b 115200
+. ~/esp/esp-idf-v5.5/export.sh
+cd 04_firmware/platforms/esp32
+idf.py build
+idf.py -p /dev/cu.usbserial-XXXX flash monitor
 ```
+
+Run `idf.py set-target esp32` once after cloning the repository or when
+resetting the generated project configuration. Use `idf.py menuconfig`
+to inspect or change ESP-IDF configuration.
 
 ## STM32 build commands
 
@@ -160,7 +166,7 @@ cmake --build --preset Debug
 ```text
 APP_ENABLE_BRINGUP_TESTS
     Enables temporary bring-up tests.
-    ESP32 sets this in platformio.ini.
+    ESP32 sets this in main/CMakeLists.txt.
     STM32 sets this in CMakePresets.json.
 
 APP_ENABLE_RC_RECEIVER

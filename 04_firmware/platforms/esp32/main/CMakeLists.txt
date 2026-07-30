@@ -32,6 +32,22 @@ idf_component_register(
         "config"
         "tasks"
         "tests"
+    PRIV_REQUIRES
+        esp_common
+        esp_driver_gpio
+        esp_driver_spi
+        esp_driver_uart
+        esp_timer
+        freertos
+        log
 )
 
 target_link_libraries(${COMPONENT_LIB} PRIVATE m)
+
+target_compile_definitions(${COMPONENT_LIB} PRIVATE
+    APP_PLATFORM_ESP32=1
+    BOARD_ESP32_NODEMCU_V1=1
+    APP_ENABLE_RC_RECEIVER=1
+    APP_ENABLE_UI=1
+    APP_ENABLE_BRINGUP_TESTS=1
+)
