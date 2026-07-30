@@ -1,14 +1,15 @@
 #include "task_ui.h"
 
-#include "bsp_oled_i2c_esp32.h"
+#include "bsp_display_spi_esp32.h"
 #include "config_imu.h"
 #include "config_rc.h"
 #include "config_ui.h"
-#include "drivers/drv_ssd1306.h"
+#include "drivers/drv_ssd1351.h"
 #include "safety/safety_imu.h"
 #include "safety/safety_rc.h"
 #include "task_imu.h"
 #include "task_rc.h"
+#include "ui/ui_canvas.h"
 #include "ui/ui_pages.h"
 #include "ui/ui_rc_input.h"
 #include "ui/ui_state.h"
@@ -25,7 +26,21 @@
 
 static const char *TAG = "task_ui";
 
+static drv_ssd1351_t g_display;
+static _Alignas(4)
+    uint8_t g_display_framebuffer[DRV_SSD1351_FRAMEBUFFER_SIZE];
+
 static void task_ui_entry(void *argument);
+static void task_ui_draw_pixel(void *context,
+                               uint16_t x,
+                               uint16_t y,
+                               ui_color_t color);
+static void task_ui_fill_rect(void *context,
+                              uint16_t x,
+                              uint16_t y,
+                              uint16_t width,
+                              uint16_t height,
+                              ui_color_t color);
 
 void task_ui_start(void)
 {
@@ -47,40 +62,47 @@ static void task_ui_entry(void *argument)
 {
     (void)argument;
 
-    bsp_oled_i2c_esp32_t oled_i2c;
-    drv_ssd1306_t display;
-    drv_ssd1306_config_t display_config =
-        drv_ssd1306_default_config();
+    bsp_display_spi_esp32_t display_io;
+    drv_ssd1351_config_t display_config =
+        drv_ssd1351_default_config();
     safety_rc_config_t rc_safety_config = safety_rc_default_config();
     safety_imu_config_t imu_safety_config = safety_imu_default_config();
     ui_rc_input_t rc_input;
     ui_state_t ui_state;
+    ui_canvas_t canvas;
 
     const ui_rc_input_config_t rc_input_config =
     {
-        .axis_channel = (uint8_t)(APP_UI_RC_AXIS_CHANNEL - 1u),
+        .page_axis_channel =
+            (uint8_t)(APP_UI_RC_PAGE_AXIS_CHANNEL - 1u),
+        .vertical_axis_channel =
+            (uint8_t)(APP_UI_RC_VERTICAL_AXIS_CHANNEL - 1u),
         .interact_channel =
             (uint8_t)(APP_UI_RC_INTERACT_CHANNEL - 1u),
-        .enter_channel = (uint8_t)(APP_UI_RC_ENTER_CHANNEL - 1u),
+        .enter_channel =
+            (uint8_t)(APP_UI_RC_ENTER_CHANNEL - 1u),
+        .input_enable_channel =
+            (uint8_t)(APP_UI_RC_INPUT_ENABLE_CHANNEL - 1u),
         .channel_min = APP_RC_CHANNEL_MIN,
         .channel_max = APP_RC_CHANNEL_MAX,
-        .axis_left_threshold = APP_UI_RC_AXIS_LEFT_THRESHOLD,
+        .axis_low_threshold = APP_UI_RC_AXIS_LOW_THRESHOLD,
         .axis_neutral_low = APP_UI_RC_AXIS_NEUTRAL_LOW,
         .axis_neutral_high = APP_UI_RC_AXIS_NEUTRAL_HIGH,
-        .axis_right_threshold = APP_UI_RC_AXIS_RIGHT_THRESHOLD,
-        .switch_off_threshold = APP_UI_RC_SWITCH_OFF_THRESHOLD,
-        .switch_on_threshold = APP_UI_RC_SWITCH_ON_THRESHOLD,
+        .axis_high_threshold = APP_UI_RC_AXIS_HIGH_THRESHOLD,
+        .action_off_threshold = APP_UI_RC_ACTION_OFF_THRESHOLD,
+        .action_on_threshold = APP_UI_RC_ACTION_ON_THRESHOLD,
+        .enable_off_threshold = APP_UI_RC_ENABLE_OFF_THRESHOLD,
+        .enable_on_threshold = APP_UI_RC_ENABLE_ON_THRESHOLD,
+        .page_right_high = (APP_UI_RC_PAGE_RIGHT_HIGH != 0),
+        .vertical_up_high = (APP_UI_RC_VERTICAL_UP_HIGH != 0),
         .interact_active_high =
             (APP_UI_RC_INTERACT_ACTIVE_HIGH != 0),
         .enter_active_high = (APP_UI_RC_ENTER_ACTIVE_HIGH != 0),
+        .input_enable_active_high =
+            (APP_UI_RC_INPUT_ENABLE_ACTIVE_HIGH != 0),
     };
 
-    display_config.i2c_address = APP_OLED_I2C_ADDRESS;
-    display_config.width = APP_OLED_WIDTH;
-    display_config.height = APP_OLED_HEIGHT;
-    display_config.contrast = APP_OLED_CONTRAST;
-    display_config.rotate_180 = (APP_OLED_ROTATE_180 != 0);
-    display_config.invert = (APP_OLED_INVERT != 0);
+    display_config.master_contrast = APP_DISPLAY_MASTER_CONTRAST;
 
     rc_safety_config.max_age_us = APP_RC_MAX_AGE_US;
     rc_safety_config.channel_min = APP_RC_CHANNEL_MIN;
@@ -103,25 +125,44 @@ static void task_ui_entry(void *argument)
 
     ui_state_init(&ui_state);
 
-    while (bsp_oled_i2c_esp32_init(&oled_i2c) != IF_I2C_OK)
+    if (!ui_canvas_init(&canvas,
+                        &g_display,
+                        DRV_SSD1351_WIDTH,
+                        DRV_SSD1351_HEIGHT,
+                        task_ui_draw_pixel,
+                        task_ui_fill_rect))
     {
-        ESP_LOGE(TAG, "OLED I2C init failed");
+        ESP_LOGE(TAG, "invalid UI canvas config");
+        vTaskDelete(NULL);
+        return;
+    }
+
+    while (bsp_display_spi_esp32_init(&display_io) !=
+           IF_DISPLAY_IO_OK)
+    {
+        ESP_LOGE(TAG, "display SPI init failed");
         vTaskDelay(pdMS_TO_TICKS(APP_UI_RETRY_MS));
     }
 
-    while (drv_ssd1306_init(&display,
-                            &oled_i2c.i2c,
-                            &display_config) != DRV_SSD1306_OK)
+    while (drv_ssd1351_init(&g_display,
+                            &display_io.io,
+                            &display_config,
+                            g_display_framebuffer,
+                            sizeof(g_display_framebuffer)) !=
+           DRV_SSD1351_OK)
     {
-        ESP_LOGE(TAG, "SSD1306 init failed");
+        ESP_LOGE(TAG, "SSD1351 init failed");
         vTaskDelay(pdMS_TO_TICKS(APP_UI_RETRY_MS));
     }
 
     ESP_LOGI(TAG,
-             "OLED UI started: axis=CH%u interact=CH%u enter=CH%u",
-             (unsigned int)APP_UI_RC_AXIS_CHANNEL,
+             "UI started: page=CH%u vertical=CH%u interact=CH%u "
+             "enter=CH%u enable=CH%u",
+             (unsigned int)APP_UI_RC_PAGE_AXIS_CHANNEL,
+             (unsigned int)APP_UI_RC_VERTICAL_AXIS_CHANNEL,
              (unsigned int)APP_UI_RC_INTERACT_CHANNEL,
-             (unsigned int)APP_UI_RC_ENTER_CHANNEL);
+             (unsigned int)APP_UI_RC_ENTER_CHANNEL,
+             (unsigned int)APP_UI_RC_INPUT_ENABLE_CHANNEL);
 
     TickType_t last_wake = xTaskGetTickCount();
     TickType_t last_render = last_wake;
@@ -159,20 +200,21 @@ static void task_ui_entry(void *argument)
             render_required = true;
 
             ESP_LOGI(TAG,
-                     "page=%u subpage=%u mode=%s",
+                     "page=%u selection=%u mode=%s input=%s",
                      (unsigned int)(ui_state.page + 1u),
-                     (unsigned int)(ui_state.subpage + 1u),
+                     (unsigned int)(ui_state.selection + 1u),
                      (ui_state.mode == UI_MODE_INTERACT)
                          ? "interact"
-                         : "browse");
+                         : "browse",
+                     ui_state.input_enabled ? "enabled" : "locked");
         }
 
         if ((events & UI_EVENT_ENTER) != 0u)
         {
             ESP_LOGI(TAG,
-                     "enter requested on page=%u subpage=%u",
+                     "enter requested on page=%u selection=%u",
                      (unsigned int)(ui_state.page + 1u),
-                     (unsigned int)(ui_state.subpage + 1u));
+                     (unsigned int)(ui_state.selection + 1u));
         }
 
         const TickType_t now_tick = xTaskGetTickCount();
@@ -189,11 +231,11 @@ static void task_ui_entry(void *argument)
                 .imu_status = &imu_status,
             };
 
-            ui_pages_render(&display, &ui_state, &model);
+            ui_pages_render(&canvas, &ui_state, &model);
 
-            if (drv_ssd1306_update(&display) != DRV_SSD1306_OK)
+            if (drv_ssd1351_update(&g_display) != DRV_SSD1351_OK)
             {
-                ESP_LOGE(TAG, "OLED update failed");
+                ESP_LOGE(TAG, "SSD1351 update failed");
             }
 
             last_render = now_tick;
@@ -203,4 +245,27 @@ static void task_ui_entry(void *argument)
         vTaskDelayUntil(&last_wake,
                         pdMS_TO_TICKS(APP_UI_TASK_PERIOD_MS));
     }
+}
+
+static void task_ui_draw_pixel(void *context,
+                               uint16_t x,
+                               uint16_t y,
+                               ui_color_t color)
+{
+    drv_ssd1351_draw_pixel((drv_ssd1351_t *)context, x, y, color);
+}
+
+static void task_ui_fill_rect(void *context,
+                              uint16_t x,
+                              uint16_t y,
+                              uint16_t width,
+                              uint16_t height,
+                              ui_color_t color)
+{
+    drv_ssd1351_fill_rect((drv_ssd1351_t *)context,
+                          x,
+                          y,
+                          width,
+                          height,
+                          color);
 }

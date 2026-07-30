@@ -14,19 +14,27 @@ IMU INT2    GPIO35
 
 INT1 and INT2 are not used by the polling firmware yet.
 
-## SSD1306 OLED
+## Waveshare 1.5-inch RGB OLED
 
 ```text
-OLED signal     ESP32 connection
-SDA             GPIO21
-SCL             GPIO22
-VCC             3.3 V
-GND             GND
+OLED signal     ESP32 connection      Notes
+VCC             3.3 V                 Match ESP32 logic level
+GND             GND                   Common ground
+DIN             GPIO13                SPI3 MOSI
+CLK             GPIO14                SPI3 SCLK
+CS              GPIO25                Active low
+D/C             GPIO21                Command low, data high
+RST             GPIO22                Active low
 ```
 
-The firmware uses I2C port 0 at 400 kHz and 7-bit address `0x3C`.
-Use pull-ups to 3.3 V on SDA and SCL. Many OLED modules already include
-pull-ups; check the module before adding another pair.
+The module uses an SSD1351 controller and the factory-default four-wire
+SPI interface. Firmware uses SPI3 at 8 MHz with RGB565 pixel data. The
+interface is write-only; no MISO connection is required.
+
+Use the complete seven-pin Waveshare harness and keep it short. Place
+local supply decoupling near the display connector. Keep the harness
+away from motor phase wires, battery conductors, switching nodes, and
+the IMU signal/ground path.
 
 ## RadioMaster RP2 ExpressLRS receiver
 

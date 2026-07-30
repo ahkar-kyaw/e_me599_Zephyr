@@ -1,118 +1,154 @@
 # UI subsystem
 
-The UI subsystem provides a read-only status interface on the SSD1306
-OLED. It uses CRSF controls for page navigation while keeping display
-logic independent from ESP-IDF, FreeRTOS, GPIO pins, and UART details.
+The UI subsystem provides a read-only local interface on the Waveshare
+1.5-inch RGB OLED module. The display uses an SSD1351 controller,
+128 x 128 RGB565 framebuffer, and four-wire SPI.
+
+Portable UI code has no ESP-IDF, FreeRTOS, GPIO, SPI-host, or board-pin
+dependencies.
 
 ## Current RadioMaster Pocket mapping
 
-The transmitter currently sends ten configured channels.
-
-| Channel | Radio control | Function |
+| Channel | Radio control | Current UI function |
 | --- | --- | --- |
-| CH1 | Ail, right stick left/right | UI page or subpage axis |
-| CH2 | Thr, right stick up/down | Not used by UI |
-| CH3 | Ele, left stick up/down | Not used by UI |
-| CH4 | Rud, left stick left/right | Not used by UI |
-| CH5 | SA, latching switch | Not used by UI |
-| CH6 | SD, latching switch | UI interaction on/off |
-| CH7 | SE, momentary switch | UI Enter event |
-| CH8 | S1, non-return potentiometer | Reserved for future adjustment |
-| CH9 | SB, three-position switch | Not used by UI |
-| CH10 | SC, three-position switch | Not used by UI |
+| CH1 | Ail, right stick left/right | Previous/next page in browse mode |
+| CH2 | Thr, right stick up/down | Previous/next selection in interact mode |
+| CH3 | Ele, left stick up/down | Unassigned |
+| CH4 | Rud, left stick left/right | Unassigned |
+| CH5 | SA, latching switch | Unassigned |
+| CH6 | SD, latching switch | Interact mode off/on |
+| CH7 | SE, momentary switch | Enter |
+| CH8 | S1, non-return potentiometer | Reserved for future value adjustment |
+| CH9 | SB, three-position switch | Unassigned |
+| CH10 | SC, three-position switch | UI input lock/enable |
 
-Channel numbers in `config_ui.h` are one-based so they match the
-transmitter channel monitor.
+Channel numbers in `config_ui.h` are one-based so they match the EdgeTX
+channel monitor.
 
-## User interaction
+## Input lock
 
-### Browse mode
-
-```text
-CH1 left
-    Previous page.
-
-CH1 right
-    Next page.
-
-CH6 inactive
-    Remain in browse mode.
-```
-
-CH1 must return to its neutral region before another left or right event
-is generated. Holding the stick does not repeatedly cycle pages.
-
-### Interact mode
+SC must be in its high position before the UI accepts navigation,
+interaction, or Enter events.
 
 ```text
-CH6 active
-    Lock the current top-level page and enter interaction.
+SC low or middle
+    Lock UI input.
+    Return to browse mode.
+    Ignore CH1, CH2, CH6, and CH7.
 
-CH1 left or right
-    Change the current page's subpage.
-
-CH7 momentary press
-    Generate an Enter event for the current page and subpage.
+SC high
+    Enable UI input after an intentional low/middle-to-high transition.
 ```
 
-Enter is wired through the state machine and reported by `task_ui`, but
-the current read-only pages do not perform configuration actions.
+After boot or RC link recovery, SC must first be moved to low or middle
+and then moved high. This prevents a transmitter that powers up with SC
+already high from immediately enabling UI input.
 
-If the RC link becomes invalid or stale, the state machine returns to
-browse mode and clears the subpage. After reconnecting, CH6 must be
-moved inactive before interaction can be entered again. This prevents
-automatic interaction when the transmitter reconnects with CH6 already
-active.
+When SC enables input:
 
-The input mapper also validates the three assigned UI channels against
-the CRSF protocol range. Unused CRSF channels do not control whether UI
-input is accepted.
+```text
+CH1 and CH2
+    Must be neutral before an axis event can occur.
+
+CH6
+    Must be inactive before interact mode can be entered.
+
+CH7
+    Must be released before an Enter event can occur.
+```
+
+## UI state machine
+
+```text
+LOCKED
+    SC high transition -> BROWSE
+
+BROWSE
+    CH1 left/right -> previous/next top-level page
+    CH6 active -> INTERACT
+    SC inactive or RC link lost -> LOCKED
+
+INTERACT
+    CH2 up/down -> previous/next selection or view
+    CH7 press -> Enter event
+    CH6 inactive -> BROWSE
+    SC inactive or RC link lost -> LOCKED
+```
+
+Both stick axes require a return to neutral before another event. Holding
+a stick does not auto-repeat. An interact-mode transition suppresses
+simultaneous axis and Enter events.
+
+Enter is counted and reported by `task_ui`, but the current pages remain
+read-only.
 
 ## Current pages
 
 ```text
 STATUS
-    RC state and age.
-    IMU state and age.
-    Roll and pitch.
-    IMU sample and error counts.
-    RC and IMU fault flags.
+    RC state and freshness.
+    IMU state and freshness.
+    Large roll and pitch values.
 
 CRSF
-    Four subpages.
-    Shows CH1-CH4, CH5-CH8, CH9-CH12, or CH13-CH16.
-    Shows link age and parser error counters.
+    Selection 1 shows CH1-CH8.
+    Selection 2 shows CH9-CH16.
+    Shows link state, age, CRC errors, and parser errors.
 
 IMU
-    Two subpages.
-    Shows attitude and pitch rate.
-    Shows acceleration, gyro, temperature, and raw temperature.
+    Selection 1 shows attitude, pitch rate, and calibration state.
+    Selection 2 shows acceleration, gyro, temperature, and norm.
 ```
 
-The header shows `B` for browse or `I` for interact and the current
-one-based subpage number.
+The layout uses:
+
+```text
+Top bar
+    Page name and LOCK/BROWSE/INTERACT state.
+
+Content area
+    Only page-relevant values.
+
+Bottom bar
+    Compact RC and IMU health indicators.
+    Page number and current selection number.
+```
+
+Permanent control instructions are intentionally omitted to reduce
+clutter.
 
 ## Module responsibilities
 
 ```text
 ui_rc_input
     Maps configured CRSF channels to semantic UI events.
-    Owns thresholds, hysteresis, neutral re-arm, and safe reconnect
-    behavior.
+    Owns input gating, thresholds, hysteresis, neutral re-arm, and
+    reconnect behavior.
 
 ui_state
-    Owns browse/interact mode, page, subpage, and Enter count.
-    Does not know about ESP32, FreeRTOS, or the OLED.
+    Owns locked/browse/interact behavior, page, selection, and Enter
+    count.
+
+ui_canvas
+    Provides portable RGB565 rectangles, compact text, and font
+    rendering.
 
 ui_pages
-    Formats STATUS, CRSF, and IMU snapshots into the SSD1306
-    framebuffer.
+    Formats STATUS, CRSF, and IMU snapshots on a ui_canvas.
+
+drv_ssd1351
+    Owns SSD1351 initialization, RGB565 framebuffer storage format,
+    controller commands, and display updates.
+
+bsp_display_spi_esp32
+    Owns the ESP32 SPI3 device, D/C pin, reset pin, and transfer
+    chunking.
 
 task_ui
-    Owns OLED initialization and updates.
-    Collects task-owned RC and IMU snapshots.
+    Owns the display instance and static framebuffer.
+    Collects RC and IMU snapshots.
     Runs safety freshness checks.
-    Feeds events into the UI state machine.
+    Feeds the portable input and UI state machines.
 ```
 
 ## Reassigning controls
@@ -126,26 +162,34 @@ Edit:
 Current assignments:
 
 ```c
-#define APP_UI_RC_AXIS_CHANNEL         1u
-#define APP_UI_RC_INTERACT_CHANNEL     6u
-#define APP_UI_RC_ENTER_CHANNEL        7u
+#define APP_UI_RC_PAGE_AXIS_CHANNEL      1u
+#define APP_UI_RC_VERTICAL_AXIS_CHANNEL  2u
+#define APP_UI_RC_INTERACT_CHANNEL       6u
+#define APP_UI_RC_ENTER_CHANNEL          7u
+#define APP_UI_RC_INPUT_ENABLE_CHANNEL  10u
 ```
 
-Change these one-based channel numbers to move a UI function to another
-transmitter channel. Switch polarity is also configurable:
+Direction and polarity are also configurable:
 
 ```c
-#define APP_UI_RC_INTERACT_ACTIVE_HIGH 1
-#define APP_UI_RC_ENTER_ACTIVE_HIGH    1
+#define APP_UI_RC_PAGE_RIGHT_HIGH          1
+#define APP_UI_RC_VERTICAL_UP_HIGH         1
+#define APP_UI_RC_INTERACT_ACTIVE_HIGH     1
+#define APP_UI_RC_ENTER_ACTIVE_HIGH        1
+#define APP_UI_RC_INPUT_ENABLE_ACTIVE_HIGH 1
 ```
 
-Set a polarity macro to `0` if that control should be active at the low
-CRSF endpoint.
+All five assigned channels must be unique. Invalid assignments or
+threshold ordering prevent the UI task from starting.
+
+SC uses separate thresholds so only its high position enables input.
+Its low and middle positions lock input. The action-switch thresholds
+remain suitable for the two-position SD switch and momentary SE switch.
 
 ## CRSF raw channel values
 
-CRSF packed channels use 11-bit fields, but the normal legacy channel
-range is narrower than the numeric `0-2047` field capacity.
+CRSF packed channels use 11-bit fields, but the normal control range is
+narrower than the numeric `0-2047` field capacity.
 
 ```text
 Raw 172     Extended low endpoint, approximately 988 us
@@ -155,30 +199,25 @@ Raw 1792    Nominal high endpoint, 2000 us
 Raw 1811    Extended high endpoint, approximately 2012 us
 ```
 
-The `191-1792` range observed on the RadioMaster Pocket is the expected
-nominal output range. Zephyr accepts `172-1811` in `config_rc.h` as the
-protocol validity range. UI activation, neutral, and switch thresholds
-are separate values in `config_ui.h`.
-
-Changing `APP_RC_CHANNEL_MIN` and `APP_RC_CHANNEL_MAX` changes the RC
-safety validity check; it does not change what the transmitter sends.
-Transmitter endpoint changes are made in the EdgeTX model Outputs
-settings. Extended transmitter limits are not needed for the current UI.
+Zephyr accepts `172-1811` in `config_rc.h` as the protocol validity
+range. UI neutral and activation thresholds are separate values in
+`config_ui.h`.
 
 ## Future tuning boundary
 
-The current UI is read-only. Future tuning should add an edit state only
-after the supervisor and control-configuration owner exist.
+The current UI is read-only. Future tuning should introduce an explicit
+edit state and a configuration service.
 
 ```text
 UI requests configuration mode.
 Supervisor accepts only from a non-moving safe state.
 Safety continues denying motion.
-UI edits a pending value.
+CH2 selects a setting.
+S1 adjusts a pending value.
+SE confirms an explicit action.
 Control configuration validates bounds.
-An explicit Enter action applies the value.
 An explicit save action writes persistent storage.
 ```
 
-The UI must not write controller globals, motor commands, torque state,
-or persistent storage directly.
+The UI must never write controller globals, motor commands, torque
+state, or persistent storage directly.

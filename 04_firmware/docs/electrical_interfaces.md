@@ -111,39 +111,56 @@ Keep the receiver and antenna away from motor phase wires, high-current
 battery wiring, switching regulators, and the CAN transceiver. Add local
 supply decoupling near the receiver connector.
 
-### SSD1306 OLED display
+### Waveshare 1.5-inch RGB OLED display
 
 ```text
 Purpose
-    Local status and debug UI.
+    Local status, diagnostics, and future tuning UI.
 
 ESP32 interface
-    I2C port 0
-    SDA on GPIO21
-    SCL on GPIO22
-    400 kHz
-    7-bit address 0x3C
+    SSD1351 controller
+    Four-wire SPI
+    SPI3 host
+    CLK on GPIO14
+    DIN/MOSI on GPIO13
+    CS on GPIO25, active low
+    D/C on GPIO21, command low and data high
+    RST on GPIO22, active low
+    8 MHz
+    No MISO connection
 
 Power
-    OLED VCC uses 3.3 V
-    OLED GND and ESP32 GND must be common
+    Module VCC uses 3.3 V
+    Module logic therefore uses 3.3 V
+    OLED and ESP32 grounds must be common
 ```
 
-The selected bring-up configuration is a 128 x 64 SSD1306 module. Power
-the module from 3.3 V so any onboard I2C pull-ups also pull to 3.3 V.
-Verify the actual module address; some variants use `0x3D`.
+The selected module is the Waveshare 1.5-inch RGB OLED Module with a
+128 x 128 SSD1351 controller. Leave its interface selection in the
+factory-default four-wire SPI position. Do not configure the module for
+three-wire SPI.
 
 ```text
-Suggested connector pinout
+Waveshare seven-pin connector
     Pin 1    3.3 V
     Pin 2    GND
-    Pin 3    SCL / GPIO22
-    Pin 4    SDA / GPIO21
+    Pin 3    DIN / GPIO13
+    Pin 4    CLK / GPIO14
+    Pin 5    CS / GPIO25
+    Pin 6    D/C / GPIO21
+    Pin 7    RST / GPIO22
 ```
 
-Use one effective set of I2C pull-ups. Start with 4.7 kohm to 3.3 V if
-the module has none. Keep SDA and SCL short and route them away from
-motor and battery conductors.
+The Waveshare documentation lists approximately 60 mA at 3.3 V for a
+full-white screen and approximately 4 mA for full black. Size the 3.3 V
+rail for the worst case and place local decoupling near the display
+connector. The default UI uses a black background and reduced master
+contrast to limit current and OLED aging.
+
+Keep the SPI harness short and route it away from motor phase wires,
+high-current battery wiring, switching nodes, and CAN transceiver
+signals. Do not route display return current through the IMU ground
+path.
 
 ### Battery sensing
 
@@ -203,7 +220,7 @@ Keep sensor supply and ground clean where practical.
 
 ## STM32 migration note
 
-The STM32H723ZG OLED I2C instance, CRSF UART instance, pins, DMA
+The STM32H723ZG display SPI instance, CRSF UART instance, pins, DMA
 channels, connector assignments, and power rails are not assigned yet.
 Do not copy ESP32 GPIO numbers or edit generated CubeMX files by hand.
 Assign the peripherals in CubeMX, regenerate generated code, and add

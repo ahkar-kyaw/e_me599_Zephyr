@@ -3,7 +3,7 @@
 Zephyr firmware is organized to support an ESP32 bring-up platform and
 an STM32H723ZG target platform while keeping reusable robot logic
 portable. The active ESP32 target includes the IMU pipeline, a
-16-channel CRSF receiver path, and an SSD1306 status display.
+16-channel CRSF receiver path, and an SSD1351 RGB status display.
 
 ## Current targets
 
@@ -75,9 +75,9 @@ task_rc
     publishes all 16 raw channels with timestamps and error counters
 
 task_ui
-    owns the SSD1306 I2C display
+    owns the SSD1351 SPI display
     shows STATUS, CRSF, and IMU pages
-    uses a portable browse/interact UI state machine
+    uses a portable locked/browse/interact UI state machine
 
 test_rc_snapshot
     performs bring-up logging for all 16 channels
@@ -90,14 +90,14 @@ test_rc_snapshot
 if_spi
     generic SPI transfer interface
 
-if_i2c
-    generic addressed I2C write interface
+if_display_io
+    generic command/data/reset display interface
 
 proto_crsf
     portable CRSF stream parser and 16-channel unpacker
 
-drv_ssd1306
-    portable SSD1306 framebuffer and text driver
+drv_ssd1351
+    portable SSD1351 RGB565 framebuffer driver
 
 safety_rc
     checks RC validity, freshness, and raw channel range
@@ -106,10 +106,10 @@ ui_rc_input
     maps reassignable CRSF channels to semantic UI events
 
 ui_state
-    owns browse/interact mode, page, and subpage
+    owns locked/browse/interact behavior, page, and selection
 
 ui_pages
-    renders portable read-only OLED pages
+    renders portable read-only pages through ui_canvas
 
 drv_ism330dhcx
     portable ISM330DHCX register driver
@@ -166,8 +166,8 @@ APP_ENABLE_BRINGUP_TESTS
 APP_ENABLE_RC_RECEIVER
     Starts the ESP32 CRSF receiver task.
 
-APP_ENABLE_OLED_UI
-    Starts the ESP32 SSD1306 UI task.
+APP_ENABLE_UI
+    Starts the ESP32 UI task.
 ```
 
 ## Development rules

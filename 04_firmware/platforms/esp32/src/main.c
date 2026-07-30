@@ -22,7 +22,7 @@ void app_main(void)
     task_rc_start();
 #endif
 
-#if APP_ENABLE_OLED_UI
+#if APP_ENABLE_UI
     task_ui_start();
 #endif
 

@@ -18,7 +18,7 @@ Platform tasks
     future task_log
 
 Platform BSP
-    SPI, CAN, I2C, UART, GPIO, timers, ADC, and board-specific hardware backends
+    SPI, CAN, UART, GPIO, timers, ADC, and board-specific hardware backends
 
 Common app glue
     app_imu_types
@@ -35,7 +35,7 @@ Common subsystem logic
 
 Common interfaces
     if_spi
-    if_i2c
+    if_display_io
     future if_can, if_uart, if_time
 ```
 
@@ -107,22 +107,25 @@ rc_snapshot_t with all 16 channels
 The protocol parser is portable and contains no ESP-IDF, FreeRTOS, pin,
 or board dependencies.
 
-## Current OLED pipeline
+## Current display pipeline
 
 ```text
-ESP32 I2C pins
+ESP32 SPI3 and control pins
     |
     v
-bsp_oled_i2c_esp32
+bsp_display_spi_esp32
     |
     v
-if_i2c_t
+if_display_io_t
     |
     v
-drv_ssd1306
+drv_ssd1351
     |
     v
-ui_pages
+RGB565 framebuffer
+    ^
+    |
+ui_canvas <--- ui_pages
     ^
     |
 ui_state <--- ui_rc_input
@@ -134,7 +137,7 @@ RC and IMU snapshots
 task_ui
 ```
 
-`task_ui` owns the OLED. It may read subsystem snapshots and present
+`task_ui` owns the display. It may read subsystem snapshots and present
 status, but it does not own safety state or motion commands. Portable UI
 input mapping, browse/interact state, and page rendering remain in
 `common/`.
@@ -151,17 +154,22 @@ task_rc
     Publishes the latest 16-channel RC snapshot.
 
 task_ui
-    Owns the SSD1306 display.
+    Owns the SSD1351 display and static RGB565 framebuffer.
     Reads snapshots, updates the portable UI state, and displays status.
 
 ui_rc_input
-    Owns channel mapping, thresholds, hysteresis, and input re-arming.
+    Owns channel mapping, SC input gating, thresholds, hysteresis, and
+    input re-arming.
 
 ui_state
-    Owns browse/interact mode, page, subpage, and Enter events.
+    Owns locked/browse/interact behavior, page, selection, and Enter
+    events.
 
 ui_pages
     Owns read-only STATUS, CRSF, and IMU page formatting.
+
+ui_canvas
+    Owns portable RGB565 drawing and compact font rendering.
 
 drv_ism330dhcx
     Owns ISM330DHCX register operations and raw-data conversion.

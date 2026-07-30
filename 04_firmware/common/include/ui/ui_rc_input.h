@@ -13,23 +13,30 @@ extern "C" {
 
 typedef struct
 {
-    uint8_t axis_channel;
+    uint8_t page_axis_channel;
+    uint8_t vertical_axis_channel;
     uint8_t interact_channel;
     uint8_t enter_channel;
+    uint8_t input_enable_channel;
 
     uint16_t channel_min;
     uint16_t channel_max;
 
-    uint16_t axis_left_threshold;
+    uint16_t axis_low_threshold;
     uint16_t axis_neutral_low;
     uint16_t axis_neutral_high;
-    uint16_t axis_right_threshold;
+    uint16_t axis_high_threshold;
 
-    uint16_t switch_off_threshold;
-    uint16_t switch_on_threshold;
+    uint16_t action_off_threshold;
+    uint16_t action_on_threshold;
+    uint16_t enable_off_threshold;
+    uint16_t enable_on_threshold;
 
+    bool page_right_high;
+    bool vertical_up_high;
     bool interact_active_high;
     bool enter_active_high;
+    bool input_enable_active_high;
 } ui_rc_input_config_t;
 
 typedef struct
@@ -37,13 +44,17 @@ typedef struct
     ui_rc_input_config_t config;
 
     bool initialized;
-    bool axis_armed;
+    bool page_axis_armed;
+    bool vertical_axis_armed;
 
     bool interact_raw_active;
     bool interact_armed;
 
     bool enter_raw_active;
     bool enter_armed;
+
+    bool input_enable_raw_active;
+    bool input_enable_armed;
 } ui_rc_input_t;
 
 bool ui_rc_input_init(ui_rc_input_t *input,

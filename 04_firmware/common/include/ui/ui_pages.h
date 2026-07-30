@@ -3,10 +3,10 @@
 
 #include "app/app_imu_types.h"
 #include "app/app_rc_types.h"
-#include "drivers/drv_ssd1306.h"
 #include "safety/safety_imu.h"
 #include "safety/safety_rc.h"
-#include "ui/ui_types.h"
+#include "ui/ui_canvas.h"
+#include "ui/ui_state.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,7 +20,7 @@ typedef struct
     const safety_imu_status_t *imu_status;
 } ui_page_model_t;
 
-void ui_pages_render(drv_ssd1306_t *display,
+void ui_pages_render(ui_canvas_t *canvas,
                      const ui_state_t *state,
                      const ui_page_model_t *model);
 

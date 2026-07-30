@@ -2,7 +2,6 @@
 #define BOARD_ESP32_NODEMCU_V1_H
 
 #include "driver/gpio.h"
-#include "driver/i2c.h"
 #include "driver/spi_master.h"
 #include "driver/uart.h"
 
@@ -29,12 +28,15 @@
 #define BOARD_IMU_INT1_GPIO              GPIO_NUM_34
 #define BOARD_IMU_INT2_GPIO              GPIO_NUM_35
 
-/* SSD1306 OLED I2C bus. */
-#define BOARD_OLED_I2C_PORT              I2C_NUM_0
-#define BOARD_OLED_I2C_SDA_GPIO          GPIO_NUM_21
-#define BOARD_OLED_I2C_SCL_GPIO          GPIO_NUM_22
-#define BOARD_OLED_I2C_CLOCK_HZ          400000u
-#define BOARD_OLED_I2C_TIMEOUT_MS        100u
+/* Waveshare SSD1351 display on a dedicated SPI bus. */
+#define BOARD_DISPLAY_SPI_HOST           SPI3_HOST
+#define BOARD_DISPLAY_SPI_SCLK_GPIO      GPIO_NUM_14
+#define BOARD_DISPLAY_SPI_MOSI_GPIO      GPIO_NUM_13
+#define BOARD_DISPLAY_SPI_CS_GPIO        GPIO_NUM_25
+#define BOARD_DISPLAY_DC_GPIO            GPIO_NUM_21
+#define BOARD_DISPLAY_RESET_GPIO         GPIO_NUM_22
+#define BOARD_DISPLAY_SPI_CLOCK_HZ       8000000
+#define BOARD_DISPLAY_SPI_MODE           0
 
 /* ExpressLRS receiver CRSF UART. */
 #define BOARD_CRSF_UART_PORT             UART_NUM_2

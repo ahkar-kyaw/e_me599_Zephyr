@@ -14,7 +14,7 @@ void ui_state_init(ui_state_t *state);
 
 bool ui_state_update(ui_state_t *state, ui_event_flags_t events);
 
-uint8_t ui_state_subpage_count(ui_page_t page);
+uint8_t ui_state_selection_count(ui_page_t page);
 
 #ifdef __cplusplus
 }

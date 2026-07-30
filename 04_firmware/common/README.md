@@ -28,7 +28,7 @@ common/
 
         drivers/
             drv_ism330dhcx.h
-            drv_ssd1306.h
+            drv_ssd1351.h
 
         estimation/
             est_attitude.h
@@ -36,7 +36,7 @@ common/
             est_imu_mount.h
 
         interfaces/
-            if_i2c.h
+            if_display_io.h
             if_spi.h
 
         protocols/
@@ -47,6 +47,7 @@ common/
             safety_rc.h
 
         ui/
+            ui_canvas.h
             ui_pages.h
             ui_rc_input.h
             ui_state.h
@@ -58,7 +59,7 @@ common/
 
         drivers/
             drv_ism330dhcx.c
-            drv_ssd1306.c
+            drv_ssd1351.c
 
         estimation/
             est_attitude.c
@@ -73,6 +74,7 @@ common/
             safety_rc.c
 
         ui/
+            ui_canvas.c
             ui_pages.c
             ui_rc_input.c
             ui_state.c
@@ -87,9 +89,10 @@ if_spi
     Defines a generic SPI transfer function.
     Allows common drivers to use SPI without knowing the MCU backend.
 
-if_i2c
-    Defines a generic addressed I2C write function.
-    Allows common drivers to use I2C without knowing the MCU backend.
+if_display_io
+    Defines portable command, data, reset, and delay operations for a
+    display controller.
+    Hides MCU SPI and GPIO details from display drivers.
 ```
 
 ### drivers
@@ -102,10 +105,10 @@ drv_ism330dhcx
     Reads raw temperature, gyro, and accelerometer data.
     Converts raw counts to SI units using the active driver configuration.
 
-drv_ssd1306
-    Portable 128 x 32 or 128 x 64 SSD1306 framebuffer driver.
-    Owns controller initialization, pixels, compact text, and display
-    transfers through if_i2c.
+drv_ssd1351
+    Portable 128 x 128 SSD1351 RGB565 framebuffer driver.
+    Owns controller initialization, pixel storage, rectangles, and
+    display transfers through if_display_io.
 ```
 
 ### protocols
@@ -163,15 +166,18 @@ ctrl_balance_types
 
 ```text
 ui_rc_input
-    Converts configured RC channels into left, right, interaction,
-    Enter, and link-loss events.
+    Converts configured RC channels into page, vertical, interaction,
+    Enter, input-gate, and link-loss events.
 
 ui_state
-    Portable browse/interact state machine.
-    Owns the current page and subpage.
+    Portable locked/browse/interact state machine.
+    Owns the current page and selection.
+
+ui_canvas
+    Portable RGB565 drawing surface and compact font renderer.
 
 ui_pages
-    Renders read-only STATUS, CRSF, and IMU pages through drv_ssd1306.
+    Renders read-only STATUS, CRSF, and IMU pages through ui_canvas.
 ```
 
 ### app

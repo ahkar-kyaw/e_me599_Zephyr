@@ -1,7 +1,7 @@
 # ESP32 platform firmware
 
 The ESP32 platform is the active bring-up target. It uses PlatformIO
-with ESP-IDF and runs the IMU pipeline, CRSF receiver, and SSD1306
+with ESP-IDF and runs the IMU pipeline, CRSF receiver, and SSD1351
 status UI.
 
 ## Structure
@@ -26,10 +26,10 @@ platforms/esp32/
         bsp/
             bsp_crsf_uart_esp32.c
             bsp_crsf_uart_esp32.h
+            bsp_display_spi_esp32.c
+            bsp_display_spi_esp32.h
             bsp_imu_spi_esp32.c
             bsp_imu_spi_esp32.h
-            bsp_oled_i2c_esp32.c
-            bsp_oled_i2c_esp32.h
 
         config/
             config_imu.h
@@ -69,12 +69,12 @@ pio device monitor -d 04_firmware/platforms/esp32 -b 115200
 APP_PLATFORM_ESP32
 BOARD_ESP32_NODEMCU_V1
 APP_ENABLE_RC_RECEIVER
-APP_ENABLE_OLED_UI
+APP_ENABLE_UI
 APP_ENABLE_BRINGUP_TESTS
 ```
 
 `APP_ENABLE_RC_RECEIVER` starts the receiver task.
-`APP_ENABLE_OLED_UI` starts the display task.
+`APP_ENABLE_UI` starts the display task.
 `APP_ENABLE_BRINGUP_TESTS` starts the LED, IMU, and RC diagnostic tasks.
 
 ## Board pin map
@@ -87,8 +87,11 @@ IMU CS          GPIO27
 IMU INT1        GPIO34
 IMU INT2        GPIO35
 
-OLED SDA        GPIO21
-OLED SCL        GPIO22
+Display CLK     GPIO14
+Display DIN     GPIO13
+Display CS      GPIO25
+Display D/C     GPIO21
+Display RST     GPIO22
 
 CRSF UART RX    GPIO16, connected to RP2 TX
 CRSF UART TX    GPIO17, connected to RP2 RX
@@ -105,9 +108,10 @@ bsp_imu_spi_esp32
     Initializes the ESP32 SPI bus.
     Implements if_spi for drv_ism330dhcx.
 
-bsp_oled_i2c_esp32
-    Initializes I2C port 0 at 400 kHz.
-    Implements if_i2c for drv_ssd1306.
+bsp_display_spi_esp32
+    Initializes the dedicated ESP32 SPI3 display bus at 8 MHz.
+    Owns display D/C and reset GPIO.
+    Implements if_display_io for drv_ssd1351.
 
 bsp_crsf_uart_esp32
     Initializes UART2 for non-inverted 420000-baud CRSF.
@@ -127,7 +131,7 @@ task_rc
     communication error counters.
 
 task_ui
-    Owns the OLED.
+    Owns the SSD1351 and static RGB565 framebuffer.
     Collects RC and IMU snapshots.
     Runs the portable UI input mapper and state machine.
     Renders STATUS, CRSF, and IMU pages.
@@ -161,17 +165,19 @@ config_rc.h
     RC freshness, raw channel range, UART read timeout, and retry values.
 
 config_ui.h
-    SSD1306 geometry, address, orientation, contrast, and UI timing.
-    One-based RC channel assignments and input thresholds.
+    SSD1351 master contrast and UI timing.
+    One-based RC channel assignments, directions, polarities, and
+    input thresholds.
 ```
 
 Current UI mapping:
 
 ```text
 CH1 Ail    previous/next page in browse mode
-           previous/next subpage in interact mode
+CH2 Thr    previous/next selection in interact mode
 CH6 SD     interaction off/on
 CH7 SE     Enter
+CH10 SC    UI input lock/enable
 ```
 
 See `04_firmware/docs/ui_subsystem.md` for UI behavior, channel
