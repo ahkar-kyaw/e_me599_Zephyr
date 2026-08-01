@@ -42,6 +42,7 @@ static void test_rc_snapshot_entry(void *argument)
     config.max_age_us = APP_RC_MAX_AGE_US;
     config.channel_min = APP_RC_CHANNEL_MIN;
     config.channel_max = APP_RC_CHANNEL_MAX;
+    config.channel_count = APP_RC_ACTIVE_CHANNEL_COUNT;
 
     for (;;)
     {

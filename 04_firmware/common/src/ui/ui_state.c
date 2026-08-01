@@ -1,5 +1,7 @@
 #include "ui/ui_state.h"
 
+#include "app/app_actuator_types.h"
+
 #include <stddef.h>
 #include <string.h>
 
@@ -89,6 +91,11 @@ bool ui_state_update(ui_state_t *state, ui_event_flags_t events)
     }
     else
     {
+        if (state->page == UI_PAGE_CAN)
+        {
+            return memcmp(&previous, state, sizeof(*state)) != 0;
+        }
+
         const uint8_t selection_count =
             ui_state_selection_count(state->page);
 
@@ -117,6 +124,9 @@ uint8_t ui_state_selection_count(ui_page_t page)
 
         case UI_PAGE_IMU:
             return 2u;
+
+        case UI_PAGE_CAN:
+            return APP_ACTUATOR_COUNT;
 
         case UI_PAGE_STATUS:
         default:

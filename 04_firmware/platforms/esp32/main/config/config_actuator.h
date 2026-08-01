@@ -1,0 +1,56 @@
+#ifndef CONFIG_ACTUATOR_H
+#define CONFIG_ACTUATOR_H
+
+#include "app/app_actuator_types.h"
+
+#include <stdbool.h>
+#include <stdint.h>
+
+#define APP_ACTUATOR_CAN_BITRATE          1000000u
+#define APP_ACTUATOR_FEEDBACK_MAX_AGE_US   100000u
+#define APP_ACTUATOR_CAN_READ_TIMEOUT_MS       20u
+#define APP_ACTUATOR_CAN_RETRY_MS             1000u
+#define APP_ACTUATOR_DIAGNOSTIC_PERIOD_MS      2000u
+#define APP_ACTUATOR_CAN_TX_TIMEOUT_MS             5u
+
+#define APP_MANUAL_DRIVE_TASK_PERIOD_MS           20u
+#define APP_MANUAL_DRIVE_REQUEST_MAX_AGE_US   150000u
+#define APP_MANUAL_DRIVE_COMMAND_MAX_AGE_US   100000u
+#define APP_MANUAL_DRIVE_STOP_HOLD_US         500000u
+#define APP_MANUAL_DRIVE_MAX_VELOCITY_ERPM    1000.0f
+
+#define APP_MANUAL_DRIVE_VELOCITY_CHANNEL     2u
+
+#define APP_MANUAL_DRIVE_STICK_NEUTRAL_LOW    850u
+#define APP_MANUAL_DRIVE_STICK_NEUTRAL_HIGH  1134u
+
+#define APP_MANUAL_DRIVE_VELOCITY_POSITIVE_HIGH 1
+
+#define APP_ACTUATOR_1_ENABLED true
+#define APP_ACTUATOR_1_CAN_ID  69u
+
+#define APP_ACTUATOR_2_ENABLED false
+#define APP_ACTUATOR_2_CAN_ID  70u
+
+#define APP_ACTUATOR_3_ENABLED false
+#define APP_ACTUATOR_3_CAN_ID  71u
+
+#define APP_ACTUATOR_4_ENABLED false
+#define APP_ACTUATOR_4_CAN_ID  72u
+
+typedef struct
+{
+    uint8_t motor_id;
+    bool enabled;
+} config_actuator_entry_t;
+
+static const config_actuator_entry_t
+    APP_ACTUATOR_CONFIG[APP_ACTUATOR_COUNT] =
+{
+    {APP_ACTUATOR_1_CAN_ID, APP_ACTUATOR_1_ENABLED},
+    {APP_ACTUATOR_2_CAN_ID, APP_ACTUATOR_2_ENABLED},
+    {APP_ACTUATOR_3_CAN_ID, APP_ACTUATOR_3_ENABLED},
+    {APP_ACTUATOR_4_CAN_ID, APP_ACTUATOR_4_ENABLED},
+};
+
+#endif

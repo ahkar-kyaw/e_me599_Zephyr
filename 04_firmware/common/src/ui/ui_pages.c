@@ -34,6 +34,9 @@ static void ui_pages_render_rc(ui_canvas_t *canvas,
 static void ui_pages_render_imu(ui_canvas_t *canvas,
                                 const ui_state_t *state,
                                 const ui_page_model_t *model);
+static void ui_pages_render_can(ui_canvas_t *canvas,
+                                const ui_state_t *state,
+                                const ui_page_model_t *model);
 static const char *ui_pages_rc_state(const safety_rc_status_t *status);
 static const char *ui_pages_imu_state(const imu_snapshot_t *snapshot,
                                       const safety_imu_status_t *status);
@@ -41,6 +44,20 @@ static ui_color_t ui_pages_rc_color(const safety_rc_status_t *status);
 static ui_color_t ui_pages_imu_color(
     const imu_snapshot_t *snapshot,
     const safety_imu_status_t *status);
+static const char *ui_pages_can_bus_state(
+    app_actuator_bus_state_t state);
+static ui_color_t ui_pages_can_bus_color(
+    app_actuator_bus_state_t state);
+static const char *ui_pages_actuator_state(
+    const actuator_snapshot_t *snapshot,
+    const actuator_feedback_snapshot_t *feedback);
+static ui_color_t ui_pages_actuator_color(
+    const actuator_snapshot_t *snapshot,
+    const actuator_feedback_snapshot_t *feedback);
+static const char *ui_pages_manual_drive_state(
+    const app_manual_drive_snapshot_t *snapshot);
+static ui_color_t ui_pages_manual_drive_color(
+    const app_manual_drive_snapshot_t *snapshot);
 static uint32_t ui_pages_age_ms(uint64_t age_us);
 static void ui_pages_format_age(char *text,
                                 size_t text_size,
@@ -59,7 +76,9 @@ void ui_pages_render(ui_canvas_t *canvas,
 {
     if ((canvas == NULL) || (state == NULL) || (model == NULL) ||
         (model->rc_snapshot == NULL) || (model->rc_status == NULL) ||
-        (model->imu_snapshot == NULL) || (model->imu_status == NULL))
+        (model->imu_snapshot == NULL) || (model->imu_status == NULL) ||
+        (model->actuator_snapshot == NULL) ||
+        (model->manual_drive_snapshot == NULL))
     {
         return;
     }
@@ -75,6 +94,10 @@ void ui_pages_render(ui_canvas_t *canvas,
 
         case UI_PAGE_IMU:
             ui_pages_render_imu(canvas, state, model);
+            break;
+
+        case UI_PAGE_CAN:
+            ui_pages_render_can(canvas, state, model);
             break;
 
         case UI_PAGE_STATUS:
@@ -94,12 +117,14 @@ static void ui_pages_draw_header(ui_canvas_t *canvas,
         "STATUS",
         "CRSF",
         "IMU",
+        "CAN",
     };
     static const ui_color_t page_color[UI_PAGE_COUNT] =
     {
         UI_COLOR_CYAN,
         UI_COLOR_GREEN,
         UI_COLOR_MAGENTA,
+        UI_COLOR_AMBER,
     };
     const char *mode;
     ui_color_t mode_color;
@@ -107,6 +132,12 @@ static void ui_pages_draw_header(ui_canvas_t *canvas,
     if (!state->input_enabled)
     {
         mode = "LOCK";
+        mode_color = UI_COLOR_AMBER;
+    }
+    else if ((state->page == UI_PAGE_CAN) &&
+             (state->mode == UI_MODE_INTERACT))
+    {
+        mode = "DRIVE";
         mode_color = UI_COLOR_AMBER;
     }
     else if (state->mode == UI_MODE_INTERACT)
@@ -172,20 +203,34 @@ static void ui_pages_draw_footer(ui_canvas_t *canvas,
                    5u,
                    ui_pages_rc_color(model->rc_status));
     ui_canvas_draw_text(canvas,
-                        30u,
+                        27u,
                         UI_FOOTER_Y + 4u,
                         "IMU",
                         UI_COLOR_MUTED,
                         1u);
     ui_canvas_fill(canvas,
-                   50u,
+                   47u,
                    UI_FOOTER_Y + 5u,
                    5u,
                    5u,
                    ui_pages_imu_color(model->imu_snapshot,
                                       model->imu_status));
+    ui_canvas_draw_text(canvas,
+                        56u,
+                        UI_FOOTER_Y + 4u,
+                        "CAN",
+                        UI_COLOR_MUTED,
+                        1u);
+    ui_canvas_fill(canvas,
+                   77u,
+                   UI_FOOTER_Y + 5u,
+                   5u,
+                   5u,
+                   ui_pages_can_bus_color(
+                       model->actuator_snapshot->bus_state));
 
     if ((state->mode == UI_MODE_INTERACT) &&
+        (state->page != UI_PAGE_CAN) &&
         (ui_state_selection_count(state->page) > 1u))
     {
         (void)snprintf(line,
@@ -195,7 +240,7 @@ static void ui_pages_draw_footer(ui_canvas_t *canvas,
                        (unsigned int)ui_state_selection_count(
                            state->page));
         ui_pages_draw_right_text(canvas,
-                                 92u,
+                                 102u,
                                  UI_FOOTER_Y + 4u,
                                  line,
                                  UI_COLOR_GREEN,
@@ -428,6 +473,125 @@ static void ui_pages_render_imu(ui_canvas_t *canvas,
     }
 }
 
+static void ui_pages_render_can(ui_canvas_t *canvas,
+                                const ui_state_t *state,
+                                const ui_page_model_t *model)
+{
+    const actuator_snapshot_t *snapshot = model->actuator_snapshot;
+    const uint32_t actuator_index =
+        ((uint32_t)state->selection < APP_ACTUATOR_COUNT) ?
+        (uint32_t)state->selection : 0u;
+    const actuator_feedback_snapshot_t *feedback =
+        &snapshot->actuator[actuator_index];
+    char line[32];
+
+    ui_canvas_draw_text(canvas, 4u, 27u, "BUS", UI_COLOR_MUTED, 1u);
+    ui_canvas_draw_text(canvas,
+                        28u,
+                        27u,
+                        ui_pages_can_bus_state(snapshot->bus_state),
+                        ui_pages_can_bus_color(snapshot->bus_state),
+                        1u);
+    ui_pages_draw_right_text(canvas,
+                             124u,
+                             27u,
+                             "1 MBIT/S",
+                             UI_COLOR_MUTED,
+                             1u);
+
+    (void)snprintf(line,
+                   sizeof(line),
+                   "TX ERR %lu",
+                   (unsigned long)snapshot->command_tx_error_count);
+    ui_canvas_draw_text(canvas, 4u, 40u, line, UI_COLOR_MUTED, 1u);
+
+    ui_canvas_fill(canvas, 4u, 53u, 120u, 19u, UI_COLOR_PANEL_LIGHT);
+    (void)snprintf(line,
+                   sizeof(line),
+                   "M%lu  ID %u",
+                   (unsigned long)(actuator_index + 1u),
+                   (unsigned int)feedback->motor_id);
+    ui_canvas_draw_text(canvas, 9u, 59u, line, UI_COLOR_WHITE, 1u);
+    ui_pages_draw_right_text(
+        canvas,
+        119u,
+        59u,
+        ui_pages_actuator_state(snapshot, feedback),
+        ui_pages_actuator_color(snapshot, feedback),
+        1u);
+
+    if (!feedback->configured)
+    {
+        ui_canvas_draw_text(canvas,
+                            24u,
+                            82u,
+                            "SLOT DISABLED",
+                            UI_COLOR_MUTED,
+                            1u);
+
+        const app_manual_drive_snapshot_t *drive =
+            model->manual_drive_snapshot;
+
+        (void)snprintf(line,
+                       sizeof(line),
+                       "DRV %s",
+                       ui_pages_manual_drive_state(drive));
+        ui_canvas_draw_text(canvas,
+                            4u,
+                            102u,
+                            line,
+                            ui_pages_manual_drive_color(drive),
+                            1u);
+        return;
+    }
+
+    (void)snprintf(line,
+                   sizeof(line),
+                   "P%+.1f V%+.0f",
+                   (double)feedback->position_deg,
+                   (double)feedback->velocity_erpm);
+    ui_canvas_draw_text(canvas, 4u, 78u, line, UI_COLOR_WHITE, 1u);
+
+    (void)snprintf(line,
+                   sizeof(line),
+                   "I%+.2fA T%dC F%u",
+                   (double)feedback->current_a,
+                   (int)feedback->temperature_c,
+                   (unsigned int)feedback->fault_code);
+    ui_canvas_draw_text(canvas,
+                        4u,
+                        90u,
+                        line,
+                        (feedback->fault_code == 0u) ?
+                            UI_COLOR_MUTED : UI_COLOR_RED,
+                        1u);
+
+    const app_manual_drive_snapshot_t *drive =
+        model->manual_drive_snapshot;
+
+    if (drive->state == APP_MANUAL_DRIVE_ARMED)
+    {
+        (void)snprintf(line,
+                       sizeof(line),
+                       "DRV LIVE C%+.0f",
+                       (double)drive->velocity_erpm);
+    }
+    else
+    {
+        (void)snprintf(line,
+                       sizeof(line),
+                       "DRV %s",
+                       ui_pages_manual_drive_state(drive));
+    }
+
+    ui_canvas_draw_text(canvas,
+                        4u,
+                        102u,
+                        line,
+                        ui_pages_manual_drive_color(drive),
+                        1u);
+}
+
 static const char *ui_pages_rc_state(const safety_rc_status_t *status)
 {
     if ((status->fault_flags & SAFETY_RC_FAULT_NO_DATA) != 0u)
@@ -494,6 +658,194 @@ static ui_color_t ui_pages_imu_color(
     }
 
     return UI_COLOR_RED;
+}
+
+static const char *ui_pages_can_bus_state(
+    app_actuator_bus_state_t state)
+{
+    switch (state)
+    {
+        case APP_ACTUATOR_BUS_ACTIVE:
+            return "ACTIVE";
+
+        case APP_ACTUATOR_BUS_WARNING:
+            return "WARNING";
+
+        case APP_ACTUATOR_BUS_PASSIVE:
+            return "PASSIVE";
+
+        case APP_ACTUATOR_BUS_OFF:
+            return "OFF";
+
+        default:
+            return "WAIT";
+    }
+}
+
+static ui_color_t ui_pages_can_bus_color(
+    app_actuator_bus_state_t state)
+{
+    switch (state)
+    {
+        case APP_ACTUATOR_BUS_ACTIVE:
+            return UI_COLOR_GREEN;
+
+        case APP_ACTUATOR_BUS_WARNING:
+            return UI_COLOR_AMBER;
+
+        case APP_ACTUATOR_BUS_PASSIVE:
+        case APP_ACTUATOR_BUS_OFF:
+            return UI_COLOR_RED;
+
+        default:
+            return UI_COLOR_AMBER;
+    }
+}
+
+static const char *ui_pages_actuator_state(
+    const actuator_snapshot_t *snapshot,
+    const actuator_feedback_snapshot_t *feedback)
+{
+    if (!feedback->configured)
+    {
+        return "DISABLED";
+    }
+
+    if (!snapshot->bus_initialized ||
+        (feedback->timestamp_us == 0u))
+    {
+        return "WAIT";
+    }
+
+    if ((snapshot->bus_state == APP_ACTUATOR_BUS_OFF) ||
+        (snapshot->bus_state == APP_ACTUATOR_BUS_PASSIVE))
+    {
+        return "BUS";
+    }
+
+    if (!feedback->valid)
+    {
+        return "STALE";
+    }
+
+    if (feedback->fault_code != 0u)
+    {
+        return "FAULT";
+    }
+
+    return "OK";
+}
+
+static ui_color_t ui_pages_actuator_color(
+    const actuator_snapshot_t *snapshot,
+    const actuator_feedback_snapshot_t *feedback)
+{
+    if (!feedback->configured ||
+        !snapshot->bus_initialized ||
+        (feedback->timestamp_us == 0u))
+    {
+        return UI_COLOR_AMBER;
+    }
+
+    if ((snapshot->bus_state == APP_ACTUATOR_BUS_OFF) ||
+        (snapshot->bus_state == APP_ACTUATOR_BUS_PASSIVE) ||
+        (feedback->fault_code != 0u))
+    {
+        return UI_COLOR_RED;
+    }
+
+    if (!feedback->valid)
+    {
+        return UI_COLOR_AMBER;
+    }
+
+    return UI_COLOR_GREEN;
+}
+
+static const char *ui_pages_manual_drive_state(
+    const app_manual_drive_snapshot_t *snapshot)
+{
+    switch (snapshot->state)
+    {
+        case APP_MANUAL_DRIVE_WAIT_SAFE:
+            if ((snapshot->inhibit_flags &
+                 APP_MANUAL_DRIVE_INHIBIT_RC) != 0u)
+            {
+                return "BLOCK RC";
+            }
+
+            if ((snapshot->inhibit_flags &
+                 APP_MANUAL_DRIVE_INHIBIT_BUS) != 0u)
+            {
+                return "BLOCK CAN";
+            }
+
+            if ((snapshot->inhibit_flags &
+                 APP_MANUAL_DRIVE_INHIBIT_MOTOR_FAULT) != 0u)
+            {
+                return "BLOCK FAULT";
+            }
+
+            if ((snapshot->inhibit_flags &
+                 APP_MANUAL_DRIVE_INHIBIT_FEEDBACK) != 0u)
+            {
+                return "BLOCK FB";
+            }
+
+            if ((snapshot->inhibit_flags &
+                 APP_MANUAL_DRIVE_INHIBIT_ACTUATOR) != 0u)
+            {
+                return "BLOCK SLOT";
+            }
+
+            return "BLOCK";
+
+        case APP_MANUAL_DRIVE_WAIT_NEUTRAL:
+            if ((snapshot->inhibit_flags &
+                 APP_MANUAL_DRIVE_INHIBIT_REARM) != 0u)
+            {
+                return "SD OFF-ON";
+            }
+
+            if ((snapshot->inhibit_flags &
+                 APP_MANUAL_DRIVE_INHIBIT_STICK) != 0u)
+            {
+                return "CENTER THR";
+            }
+
+            return "READY";
+
+        case APP_MANUAL_DRIVE_ARMED:
+            return "LIVE";
+
+        case APP_MANUAL_DRIVE_STOPPING:
+            return "STOPPING";
+
+        case APP_MANUAL_DRIVE_DISABLED:
+        default:
+            return "OFF SD=ENABLE";
+    }
+}
+
+static ui_color_t ui_pages_manual_drive_color(
+    const app_manual_drive_snapshot_t *snapshot)
+{
+    switch (snapshot->state)
+    {
+        case APP_MANUAL_DRIVE_ARMED:
+            return UI_COLOR_GREEN;
+
+        case APP_MANUAL_DRIVE_WAIT_SAFE:
+        case APP_MANUAL_DRIVE_STOPPING:
+            return UI_COLOR_RED;
+
+        case APP_MANUAL_DRIVE_WAIT_NEUTRAL:
+            return UI_COLOR_AMBER;
+
+        case APP_MANUAL_DRIVE_DISABLED:
+        default:
+            return UI_COLOR_MUTED;
+    }
 }
 
 static uint32_t ui_pages_age_ms(uint64_t age_us)

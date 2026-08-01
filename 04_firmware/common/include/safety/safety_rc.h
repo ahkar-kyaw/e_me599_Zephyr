@@ -23,6 +23,7 @@ typedef struct
     uint64_t max_age_us;
     uint16_t channel_min;
     uint16_t channel_max;
+    uint8_t channel_count;
 } safety_rc_config_t;
 
 typedef struct

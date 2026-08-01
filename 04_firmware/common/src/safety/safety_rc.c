@@ -15,6 +15,7 @@ safety_rc_config_t safety_rc_default_config(void)
         .max_age_us = SAFETY_RC_DEFAULT_MAX_AGE_US,
         .channel_min = SAFETY_RC_DEFAULT_RAW_MIN,
         .channel_max = SAFETY_RC_DEFAULT_RAW_MAX,
+        .channel_count = APP_RC_CHANNEL_COUNT,
     };
 
     return config;
@@ -49,7 +50,14 @@ void safety_rc_check(const rc_snapshot_t *snapshot,
         status->fault_flags |= SAFETY_RC_FAULT_STALE;
     }
 
-    for (uint32_t i = 0u; i < APP_RC_CHANNEL_COUNT; i++)
+    if ((config->channel_count == 0u) ||
+        (config->channel_count > APP_RC_CHANNEL_COUNT))
+    {
+        status->fault_flags |= SAFETY_RC_FAULT_CHANNEL_RANGE;
+        return;
+    }
+
+    for (uint32_t i = 0u; i < config->channel_count; i++)
     {
         if ((snapshot->channel[i] < config->channel_min) ||
             (snapshot->channel[i] > config->channel_max))

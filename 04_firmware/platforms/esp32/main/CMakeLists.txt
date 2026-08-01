@@ -2,12 +2,17 @@ idf_component_register(
     SRCS
         "main.c"
         "board/board_led.c"
+        "bsp/bsp_can_esp32.c"
         "bsp/bsp_crsf_uart_esp32.c"
         "bsp/bsp_display_spi_esp32.c"
         "bsp/bsp_imu_spi_esp32.c"
         "tasks/task_imu.c"
+        "tasks/task_motor.c"
         "tasks/task_rc.c"
+        "tasks/task_safety.c"
+        "tasks/task_supervisor.c"
         "tasks/task_ui.c"
+        "tests/test_actuator_snapshot.c"
         "tests/test_debug_led.c"
         "tests/test_imu_snapshot.c"
         "tests/test_rc_snapshot.c"
@@ -17,8 +22,10 @@ idf_component_register(
         "../../../common/src/estimation/est_imu_calibration.c"
         "../../../common/src/estimation/est_attitude.c"
         "../../../common/src/estimation/est_imu_mount.c"
+        "../../../common/src/protocols/proto_cubemars_ak.c"
         "../../../common/src/protocols/proto_crsf.c"
         "../../../common/src/safety/safety_imu.c"
+        "../../../common/src/safety/safety_manual_drive.c"
         "../../../common/src/safety/safety_rc.c"
         "../../../common/src/ui/ui_canvas.c"
         "../../../common/src/ui/ui_pages.c"
@@ -36,6 +43,7 @@ idf_component_register(
         esp_common
         esp_driver_gpio
         esp_driver_spi
+        esp_driver_twai
         esp_driver_uart
         esp_timer
         freertos
@@ -47,7 +55,13 @@ target_link_libraries(${COMPONENT_LIB} PRIVATE m)
 target_compile_definitions(${COMPONENT_LIB} PRIVATE
     APP_PLATFORM_ESP32=1
     BOARD_ESP32_NODEMCU_V1=1
+    APP_ENABLE_ACTUATORS=1
+    APP_ENABLE_ACTUATOR_DIAGNOSTICS=1
+    APP_ENABLE_CAN_ONLY_LOGGING=1
+    APP_ENABLE_DEBUG_LED_TEST=0
+    APP_ENABLE_IMU_DIAGNOSTICS=0
     APP_ENABLE_RC_RECEIVER=1
+    APP_ENABLE_RC_DIAGNOSTICS=0
     APP_ENABLE_UI=1
     APP_ENABLE_BRINGUP_TESTS=1
 )

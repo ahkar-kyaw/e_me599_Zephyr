@@ -41,36 +41,79 @@ LD3         PB14            DBG_LED3
 
 Application code should use `board_led.h` rather than CubeMX GPIO macros directly.
 
-## Future electrical interfaces
-
-The following sections should be completed as the electrical design matures.
-
-### CAN motor bus
+## CAN motor bus
 
 ```text
 Purpose
-    Communicate with CubeMars AK40-10 motors.
+    Communicate with four CubeMars AK40-10 actuators.
 
-Expected hardware
-    STM32 FDCAN or ESP32 TWAI
-    TJA1051T/3 CAN transceiver
-    CANH and CANL connector
-    Optional 120 ohm termination jumper
-    TVS diode footprint
-    Common-mode choke footprint if needed
+ESP32 interface
+    ESP32 TWAI
+    GPIO26 is CAN_TX
+    GPIO32 is CAN_RX
+    1 Mbit/s classic CAN
+    29-bit extended frames
+
+Transceiver
+    Adafruit CAN Pal with TJA1051T/3
+    Vcc uses 3.3 V to match ESP32 logic
+    GND is common with ESP32 and actuator CAN ground
+    ESP32 GPIO26 connects to CAN Pal TX
+    ESP32 GPIO32 connects to CAN Pal RX
+    SLNT is held low for normal operation
 ```
 
-Document these when assigned:
+The CAN Pal has an onboard charge pump for the transceiver bus-side
+supply and a switchable 120 ohm terminator. It is not an isolated CAN
+interface.
 
 ```text
-MCU CAN_TX pin
-MCU CAN_RX pin
-CAN transceiver VIO
-CAN transceiver VCC
-CAN silent or standby control pin
-CAN connector pinout
-Termination strategy
+Bus connector
+    L                   CANL
+    Middle terminal     CAN ground
+    H                   CANH
+
+Topology
+    One linear trunk
+    Short drops to four actuators
+    Exactly two 120 ohm endpoint terminations
+    No star wiring
 ```
+
+Enable the CAN Pal terminator only if the ESP32/CAN Pal is one physical
+end of the trunk. Confirm whether the actuator or harness at the far
+end provides termination. Intermediate actuator nodes must not add
+termination.
+
+The AK40-10 product specification identifies an A1257WR-S-4P CAN
+connector. The exact harness pin order has not yet been verified in
+this repository. Do not infer the pin order from wire colors. Verify it
+against the exact CubeMars driver installation instructions and cable,
+then record CANH, CANL, ground, and any auxiliary conductor here.
+
+The actuator power bus is separate from logic power. The AK40-10 is a
+24 V actuator rated at 2.7 A with a listed peak current of 7.3 A. Four
+actuators therefore require a deliberately designed power tree. Before
+loaded tests, document:
+
+```text
+Battery chemistry and maximum voltage
+Main fuse and branch protection
+Contactor or hardware E-stop power cut
+Precharge or inrush behavior
+Wire gauge and connector current ratings
+Grounding and return-current plan
+Regenerative-energy handling
+```
+
+Keep battery and motor-current paths physically separated from the CAN
+pair, ESP32 logic wiring, OLED harness, receiver, and IMU supply and
+signals. Cross noisy conductors at right angles where separation cannot
+be maintained.
+
+## Future electrical interfaces
+
+The following sections should be completed as the electrical design matures.
 
 ### RadioMaster RP2 ExpressLRS receiver
 

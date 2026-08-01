@@ -19,9 +19,12 @@ common/
 common/
     include/
         app/
+            app_actuator_types.h
             app_balance_state.h
             app_imu_types.h
+            app_manual_drive_types.h
             app_rc_types.h
+            app_supervisor_types.h
 
         control/
             ctrl_balance_types.h
@@ -36,14 +39,17 @@ common/
             est_imu_mount.h
 
         interfaces/
+            if_can.h
             if_display_io.h
             if_spi.h
 
         protocols/
+            proto_cubemars_ak.h
             proto_crsf.h
 
         safety/
             safety_imu.h
+            safety_manual_drive.h
             safety_rc.h
 
         ui/
@@ -67,10 +73,12 @@ common/
             est_imu_mount.c
 
         protocols/
+            proto_cubemars_ak.c
             proto_crsf.c
 
         safety/
             safety_imu.c
+            safety_manual_drive.c
             safety_rc.c
 
         ui/
@@ -93,6 +101,10 @@ if_display_io
     Defines portable command, data, reset, and delay operations for a
     display controller.
     Hides MCU SPI and GPIO details from display drivers.
+
+if_can
+    Defines a portable classic CAN frame.
+    Hides ESP32 TWAI and future STM32 FDCAN frame types from protocols.
 ```
 
 ### drivers
@@ -119,6 +131,11 @@ proto_crsf
     Validates DVB-S2 CRC-8.
     Unpacks all 16 11-bit RC channels.
     Tracks valid-frame, CRC-error, and parse-error counts.
+
+proto_cubemars_ak
+    Packs selected CubeMars servo commands into extended CAN frames.
+    Decodes periodic servo feedback and fault codes.
+    Leaves CAN peripheral ownership to the platform motor task.
 ```
 
 ### estimation
@@ -152,6 +169,11 @@ safety_imu
 safety_rc
     Checks RC snapshot validity, freshness, and raw channel range.
     Does not grant whole-system permission to move.
+
+safety_manual_drive
+    Checks the supervisor request, RC, selected actuator, CAN state,
+    feedback freshness, motor fault, and neutral-stick entry.
+    Publishes a bounded manual velocity command and stop state.
 ```
 
 ### control
@@ -177,7 +199,8 @@ ui_canvas
     Portable RGB565 drawing surface and compact font renderer.
 
 ui_pages
-    Renders read-only STATUS, CRSF, and IMU pages through ui_canvas.
+    Renders STATUS, CRSF, IMU, and CAN pages through ui_canvas.
+    Displays manual-drive safety status without granting permission.
 ```
 
 ### app
@@ -186,6 +209,16 @@ ui_pages
 app_imu_types
     Defines imu_snapshot_t.
     This is the shared IMU state published by platform tasks.
+
+app_actuator_types
+    Defines the four-slot actuator feedback snapshot, freshness state,
+    driver faults, CAN state, and communication counters.
+
+app_manual_drive_types
+    Defines the UI request and safety-approved manual-drive snapshot.
+
+app_supervisor_types
+    Defines SAFE_IDLE and MANUAL_DRIVE whole-system modes.
 
 app_rc_types
     Defines rc_snapshot_t with all 16 raw CRSF channels, timestamp,
@@ -209,7 +242,7 @@ estimation
     used by platform tasks
 
 safety
-    used by app glue and future safety tasks
+    used by platform safety tasks
 
 control
     used by app glue and future control tasks

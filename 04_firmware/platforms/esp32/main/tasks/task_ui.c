@@ -8,7 +8,9 @@
 #include "safety/safety_imu.h"
 #include "safety/safety_rc.h"
 #include "task_imu.h"
+#include "task_motor.h"
 #include "task_rc.h"
+#include "task_safety.h"
 #include "ui/ui_canvas.h"
 #include "ui/ui_pages.h"
 #include "ui/ui_rc_input.h"
@@ -29,6 +31,9 @@ static const char *TAG = "task_ui";
 static drv_ssd1351_t g_display;
 static _Alignas(4)
     uint8_t g_display_framebuffer[DRV_SSD1351_FRAMEBUFFER_SIZE];
+static app_manual_drive_request_t g_manual_drive_request;
+static portMUX_TYPE g_manual_drive_request_lock =
+    portMUX_INITIALIZER_UNLOCKED;
 
 static void task_ui_entry(void *argument);
 static void task_ui_draw_pixel(void *context,
@@ -41,6 +46,8 @@ static void task_ui_fill_rect(void *context,
                               uint16_t width,
                               uint16_t height,
                               ui_color_t color);
+static void task_ui_publish_manual_drive_request(
+    const app_manual_drive_request_t *request);
 
 void task_ui_start(void)
 {
@@ -56,6 +63,19 @@ void task_ui_start(void)
     {
         ESP_LOGE(TAG, "failed to create task");
     }
+}
+
+void task_ui_get_manual_drive_request(
+    app_manual_drive_request_t *request)
+{
+    if (request == NULL)
+    {
+        return;
+    }
+
+    portENTER_CRITICAL(&g_manual_drive_request_lock);
+    *request = g_manual_drive_request;
+    portEXIT_CRITICAL(&g_manual_drive_request_lock);
 }
 
 static void task_ui_entry(void *argument)
@@ -107,6 +127,7 @@ static void task_ui_entry(void *argument)
     rc_safety_config.max_age_us = APP_RC_MAX_AGE_US;
     rc_safety_config.channel_min = APP_RC_CHANNEL_MIN;
     rc_safety_config.channel_max = APP_RC_CHANNEL_MAX;
+    rc_safety_config.channel_count = APP_RC_ACTIVE_CHANNEL_COUNT;
 
     imu_safety_config.max_age_us = APP_IMU_MAX_AGE_US;
     imu_safety_config.max_abs_roll_rad = APP_IMU_MAX_ABS_ROLL_RAD;
@@ -172,12 +193,16 @@ static void task_ui_entry(void *argument)
     {
         rc_snapshot_t rc_snapshot;
         imu_snapshot_t imu_snapshot;
+        actuator_snapshot_t actuator_snapshot;
+        app_manual_drive_snapshot_t manual_drive_snapshot;
         safety_rc_status_t rc_status;
         safety_imu_status_t imu_status;
         const uint64_t now_us = (uint64_t)esp_timer_get_time();
 
         task_rc_get_snapshot(&rc_snapshot);
         task_imu_get_snapshot(&imu_snapshot);
+        task_motor_get_snapshot(&actuator_snapshot);
+        task_safety_get_manual_drive_snapshot(&manual_drive_snapshot);
 
         safety_rc_check(&rc_snapshot,
                         now_us,
@@ -217,6 +242,17 @@ static void task_ui_entry(void *argument)
                      (unsigned int)(ui_state.selection + 1u));
         }
 
+        const app_manual_drive_request_t manual_drive_request =
+        {
+            .timestamp_us = now_us,
+            .actuator_index = 0u,
+            .enabled = ui_state.input_enabled &&
+                       (ui_state.page == UI_PAGE_CAN) &&
+                       (ui_state.mode == UI_MODE_INTERACT),
+        };
+
+        task_ui_publish_manual_drive_request(&manual_drive_request);
+
         const TickType_t now_tick = xTaskGetTickCount();
 
         if (render_required ||
@@ -229,6 +265,8 @@ static void task_ui_entry(void *argument)
                 .rc_status = &rc_status,
                 .imu_snapshot = &imu_snapshot,
                 .imu_status = &imu_status,
+                .actuator_snapshot = &actuator_snapshot,
+                .manual_drive_snapshot = &manual_drive_snapshot,
             };
 
             ui_pages_render(&canvas, &ui_state, &model);
@@ -245,6 +283,14 @@ static void task_ui_entry(void *argument)
         vTaskDelayUntil(&last_wake,
                         pdMS_TO_TICKS(APP_UI_TASK_PERIOD_MS));
     }
+}
+
+static void task_ui_publish_manual_drive_request(
+    const app_manual_drive_request_t *request)
+{
+    portENTER_CRITICAL(&g_manual_drive_request_lock);
+    g_manual_drive_request = *request;
+    portEXIT_CRITICAL(&g_manual_drive_request_lock);
 }
 
 static void task_ui_draw_pixel(void *context,

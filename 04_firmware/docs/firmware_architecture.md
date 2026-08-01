@@ -12,9 +12,10 @@ Platform tasks
     task_imu
     task_rc
     task_ui
+    task_motor
+    task_supervisor
+    task_safety
     future task_control
-    future task_safety
-    future task_motor
     future task_log
 
 Platform BSP
@@ -23,6 +24,9 @@ Platform BSP
 Common app glue
     app_imu_types
     app_rc_types
+    app_actuator_types
+    app_manual_drive_types
+    app_supervisor_types
     app_balance_state
 
 Common subsystem logic
@@ -36,7 +40,8 @@ Common subsystem logic
 Common interfaces
     if_spi
     if_display_io
-    future if_can, if_uart, if_time
+    if_can
+    future if_uart, if_time
 ```
 
 ## Current IMU pipeline
@@ -100,7 +105,7 @@ rc_snapshot_t with all 16 channels
     |       v
     |   semantic UI events
     |
-    +--> future supervisor/control input mapping
+    +--> task_supervisor and task_safety manual-drive input path
 ```
 
 `task_rc` owns the UART and publishes the latest timestamped snapshot.
@@ -131,7 +136,7 @@ ui_canvas <--- ui_pages
 ui_state <--- ui_rc_input
     ^
     |
-RC and IMU snapshots
+RC, IMU, and actuator snapshots
     |
     v
 task_ui
@@ -141,6 +146,53 @@ task_ui
 status, but it does not own safety state or motion commands. Portable UI
 input mapping, browse/interact state, and page rendering remain in
 `common/`.
+
+## Current actuator and manual-drive pipeline
+
+```text
+Four CubeMars AK40-10 actuator slots
+    |
+    v
+Adafruit TJA1051T/3 CAN Pal
+    |
+    v
+ESP32 TWAI at 1 Mbit/s
+    |
+    v
+bsp_can_esp32
+    |
+    v
+if_can_frame_t
+    |
+    v
+proto_cubemars_ak
+    |
+    v
+task_motor
+    |
+    v
+actuator_snapshot_t
+    |
+    +--> test_actuator_snapshot
+    +--> task_ui
+    +--> task_safety
+
+task_ui manual-drive request
+    |
+    v
+task_supervisor mode
+    |
+    v
+safety_manual_drive permission and bounded command
+    |
+    v
+task_motor command freshness check and CAN transmit
+```
+
+`task_motor` publishes fresh servo feedback, fault codes, bus state, and
+communication counters. It can transmit the bounded servo velocity
+command only while a fresh `task_safety` approval is present. It sends
+no command automatically at boot.
 
 ## Ownership rules
 
@@ -157,6 +209,23 @@ task_ui
     Owns the SSD1351 display and static RGB565 framebuffer.
     Reads snapshots, updates the portable UI state, and displays status.
 
+task_motor
+    Owns the ESP32 TWAI peripheral and CAN receive queue.
+    Publishes feedback for four configurable actuator slots.
+    Monitors bus state and requests recovery after bus-off.
+    Sends only fresh, safety-approved commands.
+    Applies a local zero-command fallback when approval expires.
+
+task_supervisor
+    Owns SAFE_IDLE and MANUAL_DRIVE whole-system modes.
+    Converts a fresh UI request into an explicit system mode.
+
+task_safety
+    Owns manual-drive permission.
+    Checks RC freshness and range, CAN state, selected actuator,
+    feedback freshness, motor fault, neutral stick, and supervisor mode.
+    Publishes the only command accepted by task_motor.
+
 ui_rc_input
     Owns channel mapping, SC input gating, thresholds, hysteresis, and
     input re-arming.
@@ -166,7 +235,8 @@ ui_state
     events.
 
 ui_pages
-    Owns read-only STATUS, CRSF, and IMU page formatting.
+    Owns STATUS, CRSF, IMU, and CAN page formatting.
+    Displays safety state but does not grant permission to move.
 
 ui_canvas
     Owns portable RGB565 drawing and compact font rendering.
@@ -240,7 +310,7 @@ Use timestamps and validity flags for data freshness.
 common/
     Portable source files are compiled into each platform target as needed.
 
-platforms/esp32/src/CMakeLists.txt
+platforms/esp32/main/CMakeLists.txt
     Adds ESP32 files and selected common files to the ESP-IDF component.
 
 platforms/stm32/app/CMakeLists.txt

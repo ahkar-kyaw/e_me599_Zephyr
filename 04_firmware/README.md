@@ -3,7 +3,8 @@
 Zephyr firmware is organized to support an ESP32 bring-up platform and
 an STM32H723ZG target platform while keeping reusable robot logic
 portable. The active ESP32 target includes the IMU pipeline, a
-16-channel CRSF receiver path, and an SSD1351 RGB status display.
+16-channel CRSF receiver path, an SSD1351 RGB status display, and a
+CubeMars feedback path with a safety-gated manual velocity test.
 
 ## Current targets
 
@@ -53,6 +54,8 @@ docs/
 ```text
 app_main
     starts task_imu
+    starts task_motor when APP_ENABLE_ACTUATORS is enabled
+    starts task_supervisor and task_safety for manual commissioning
     starts bring-up tests when APP_ENABLE_BRINGUP_TESTS is enabled
 
 task_imu
@@ -76,12 +79,31 @@ task_rc
 
 task_ui
     owns the SSD1351 SPI display
-    shows STATUS, CRSF, and IMU pages
+    shows STATUS, CRSF, IMU, and CAN pages
     uses a portable locked/browse/interact UI state machine
+    publishes a timestamped CAN-page manual-drive request
+
+task_supervisor
+    owns SAFE_IDLE and MANUAL_DRIVE whole-system modes
+
+task_safety
+    validates RC, supervisor mode, neutral stick, CAN, and feedback
+    publishes the only manual command accepted by task_motor
+
+task_motor
+    owns ESP32 TWAI through bsp_can_esp32
+    monitors four configurable CubeMars actuator slots
+    decodes timestamped servo feedback and driver faults
+    transmits only fresh, safety-approved servo velocity commands
+    sends no command automatically at boot
 
 test_rc_snapshot
     performs bring-up logging for all 16 channels
     applies portable RC freshness and range checks
+
+test_actuator_snapshot
+    logs essential CAN, M1 feedback, drive command, and transmit errors
+    cannot transmit actuator commands
 ```
 
 ## Common firmware flow
@@ -93,8 +115,14 @@ if_spi
 if_display_io
     generic command/data/reset display interface
 
+if_can
+    generic classic CAN frame representation
+
 proto_crsf
     portable CRSF stream parser and 16-channel unpacker
+
+proto_cubemars_ak
+    portable CubeMars servo command packing and feedback decoding
 
 drv_ssd1351
     portable SSD1351 RGB565 framebuffer driver
@@ -109,7 +137,10 @@ ui_state
     owns locked/browse/interact behavior, page, and selection
 
 ui_pages
-    renders portable read-only pages through ui_canvas
+    renders portable status and manual-drive state through ui_canvas
+
+safety_manual_drive
+    owns the portable manual commissioning gate and arm state machine
 
 drv_ism330dhcx
     portable ISM330DHCX register driver
@@ -174,6 +205,22 @@ APP_ENABLE_RC_RECEIVER
 
 APP_ENABLE_UI
     Starts the ESP32 UI task.
+
+APP_ENABLE_ACTUATORS
+    Starts the ESP32 actuator task. It always receives feedback and
+    accepts only fresh commands approved by task_safety.
+
+APP_ENABLE_ACTUATOR_DIAGNOSTICS
+    Enables the read-only actuator serial logger when bring-up tests are
+    enabled.
+
+APP_ENABLE_CAN_ONLY_LOGGING
+    Suppresses recurring non-CAN application logs during CAN bring-up.
+
+APP_ENABLE_DEBUG_LED_TEST
+APP_ENABLE_IMU_DIAGNOSTICS
+APP_ENABLE_RC_DIAGNOSTICS
+    Independently control the other bring-up diagnostics.
 ```
 
 ## Development rules
@@ -215,6 +262,10 @@ Do not let UI, tests, or control write directly to motors.
 
 04_firmware/docs/ui_subsystem.md
     OLED pages, RC controls, UI state machine, CRSF ranges, and future tuning boundary.
+
+04_firmware/docs/actuator_subsystem.md
+    CubeMars servo CAN, four-motor configuration, feedback snapshots,
+    safety ownership, bring-up, and MIT-mode growth path.
 
 04_firmware/docs/electrical_interfaces.md
     Firmware-facing electrical interface notes and pin maps.

@@ -45,4 +45,8 @@
 #define BOARD_CRSF_UART_BAUDRATE         420000u
 #define BOARD_CRSF_UART_RX_BUFFER_BYTES  512u
 
+/* CubeMars actuator CAN bus through the external CAN transceiver. */
+#define BOARD_CAN_TX_GPIO                GPIO_NUM_26
+#define BOARD_CAN_RX_GPIO                GPIO_NUM_32
+
 #endif

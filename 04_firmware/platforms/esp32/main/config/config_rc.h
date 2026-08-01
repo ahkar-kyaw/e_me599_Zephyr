@@ -4,6 +4,7 @@
 #include "protocols/proto_crsf.h"
 
 #define APP_RC_MAX_AGE_US              100000u
+#define APP_RC_ACTIVE_CHANNEL_COUNT         10u
 #define APP_RC_CHANNEL_MIN             PROTO_CRSF_CHANNEL_VALUE_MIN
 #define APP_RC_CHANNEL_MAX             PROTO_CRSF_CHANNEL_VALUE_MAX
 #define APP_RC_UART_READ_TIMEOUT_MS    20u

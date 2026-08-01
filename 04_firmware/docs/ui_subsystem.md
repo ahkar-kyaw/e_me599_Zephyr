@@ -1,8 +1,8 @@
 # UI subsystem
 
-The UI subsystem provides a read-only local interface on the Waveshare
-1.5-inch RGB OLED module. The display uses an SSD1351 controller,
-128 x 128 RGB565 framebuffer, and four-wire SPI.
+The UI subsystem provides local status and deliberate user requests on
+the Waveshare 1.5-inch RGB OLED module. The display uses an SSD1351
+controller, 128 x 128 RGB565 framebuffer, and four-wire SPI.
 
 Portable UI code has no ESP-IDF, FreeRTOS, GPIO, SPI-host, or board-pin
 dependencies.
@@ -12,12 +12,12 @@ dependencies.
 | Channel | Radio control | Current UI function |
 | --- | --- | --- |
 | CH1 | Ail, right stick left/right | Previous/next page in browse mode |
-| CH2 | Thr, right stick up/down | Previous/next selection in interact mode |
+| CH2 | Thr, right stick up/down | Page selection normally; M1 velocity while CAN DRIVE is live |
 | CH3 | Ele, left stick up/down | Unassigned |
 | CH4 | Rud, left stick left/right | Unassigned |
 | CH5 | SA, latching switch | Unassigned |
-| CH6 | SD, latching switch | Interact mode off/on |
-| CH7 | SE, momentary switch | Enter |
+| CH6 | SD, latching switch | Interact mode; enables manual drive on CAN |
+| CH7 | SE, momentary switch | Enter, currently unused on CAN |
 | CH8 | S1, non-return potentiometer | Reserved for future value adjustment |
 | CH9 | SB, three-position switch | Unassigned |
 | CH10 | SC, three-position switch | UI input lock/enable |
@@ -69,7 +69,8 @@ BROWSE
     SC inactive or RC link lost -> LOCKED
 
 INTERACT
-    CH2 up/down -> previous/next selection or view
+    CH2 up/down -> previous/next selection or view on non-CAN pages
+    CAN page -> CH2 is the manual velocity input
     CH7 press -> Enter event
     CH6 inactive -> BROWSE
     SC inactive or RC link lost -> LOCKED
@@ -79,8 +80,8 @@ Both stick axes require a return to neutral before another event. Holding
 a stick does not auto-repeat. An interact-mode transition suppresses
 simultaneous axis and Enter events.
 
-Enter is counted and reported by `task_ui`, but the current pages remain
-read-only.
+Enter remains available for future page actions. It is not required for
+manual drive.
 
 ## Current pages
 
@@ -98,6 +99,14 @@ CRSF
 IMU
     Selection 1 shows attitude, pitch rate, and calibration state.
     Selection 2 shows acceleration, gyro, temperature, and norm.
+
+CAN
+    Shows CAN bus state and command transmit errors.
+    Shows M1 ID, feedback state, position, electrical speed, current,
+    temperature, and fault code.
+    SD enables manual-drive request; SE is not required.
+    Shows OFF, BLOCK, CENTER THR, LIVE, STOPPING, or SD OFF-ON status
+    and the approved ERPM command.
 ```
 
 The layout uses:
@@ -110,7 +119,7 @@ Content area
     Only page-relevant values.
 
 Bottom bar
-    Compact RC and IMU health indicators.
+    Compact RC, IMU, and CAN health indicators.
     Page number and current selection number.
 ```
 
@@ -134,7 +143,7 @@ ui_canvas
     rendering.
 
 ui_pages
-    Formats STATUS, CRSF, and IMU snapshots on a ui_canvas.
+    Formats STATUS, CRSF, IMU, and actuator snapshots on a ui_canvas.
 
 drv_ssd1351
     Owns SSD1351 initialization, RGB565 framebuffer storage format,
@@ -146,17 +155,34 @@ bsp_display_spi_esp32
 
 task_ui
     Owns the display instance and static framebuffer.
-    Collects RC and IMU snapshots.
+    Collects RC, IMU, and actuator snapshots.
     Runs safety freshness checks.
     Feeds the portable input and UI state machines.
+    Publishes a timestamped manual-drive request.
+    Does not grant motion permission or write CAN commands.
 ```
+
+## CAN manual-drive interaction
+
+```text
+1. Keep SD and SC low and center CH2.
+2. Move SC high to enable UI input.
+3. Browse to CAN with CH1.
+4. Keep CH2 centered and move SD high.
+5. When DRV LIVE appears, CH2 becomes the bounded M1 velocity input.
+6. Move SD low, move SC low, or leave CAN to stop.
+```
+
+The UI request passes through `task_supervisor` and
+`safety_manual_drive` before `task_motor` can transmit it. The display
+never directly enables torque or writes a motor frame.
 
 ## Reassigning controls
 
 Edit:
 
 ```text
-04_firmware/platforms/esp32/src/config/config_ui.h
+04_firmware/platforms/esp32/main/config/config_ui.h
 ```
 
 Current assignments:
@@ -167,6 +193,13 @@ Current assignments:
 #define APP_UI_RC_INTERACT_CHANNEL       6u
 #define APP_UI_RC_ENTER_CHANNEL          7u
 #define APP_UI_RC_INPUT_ENABLE_CHANNEL  10u
+```
+
+Manual-drive assignments are separately configurable in
+`platforms/esp32/main/config/config_actuator.h`:
+
+```c
+#define APP_MANUAL_DRIVE_VELOCITY_CHANNEL 2u
 ```
 
 Direction and polarity are also configurable:
@@ -200,13 +233,16 @@ Raw 1811    Extended high endpoint, approximately 2012 us
 ```
 
 Zephyr accepts `172-1811` in `config_rc.h` as the protocol validity
-range. UI neutral and activation thresholds are separate values in
-`config_ui.h`.
+range. The CRSF snapshot still carries all 16 protocol slots, but
+`APP_RC_ACTIVE_CHANNEL_COUNT` is currently 10 so unused CH11-CH16 do
+not block safety. UI neutral and activation thresholds are separate
+values in `config_ui.h`.
 
 ## Future tuning boundary
 
-The current UI is read-only. Future tuning should introduce an explicit
-edit state and a configuration service.
+Future tuning should introduce an explicit edit state and a
+configuration service. The CAN DRIVE request is a narrowly scoped
+commissioning action, not a general configuration mechanism.
 
 ```text
 UI requests configuration mode.
