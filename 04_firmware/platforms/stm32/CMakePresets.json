@@ -14,16 +14,14 @@
             "name": "Debug",
             "inherits": "default",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "APP_ENABLE_BRINGUP_TESTS": "ON"
+                "CMAKE_BUILD_TYPE": "Debug"
             }
         },
         {
             "name": "Release",
             "inherits": "default",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release",
-                "APP_ENABLE_BRINGUP_TESTS": "OFF"
+                "CMAKE_BUILD_TYPE": "Release"
             }
         }
     ],

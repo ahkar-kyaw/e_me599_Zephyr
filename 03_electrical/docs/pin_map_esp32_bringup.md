@@ -14,10 +14,10 @@ IMU INT2    GPIO35
 
 INT1 and INT2 are not used by the polling firmware yet.
 
-## Waveshare 1.5-inch RGB OLED
+## Waveshare 2-inch IPS LCD
 
 ```text
-OLED signal     ESP32 connection      Notes
+LCD signal      ESP32 connection      Notes
 VCC             3.3 V                 Match ESP32 logic level
 GND             GND                   Common ground
 DIN             GPIO13                SPI3 MOSI
@@ -25,13 +25,14 @@ CLK             GPIO14                SPI3 SCLK
 CS              GPIO25                Active low
 D/C             GPIO21                Command low, data high
 RST             GPIO22                Active low
+BL              3.3 V                 Backlight always on
 ```
 
-The module uses an SSD1351 controller and the factory-default four-wire
-SPI interface. Firmware uses SPI3 at 8 MHz with RGB565 pixel data. The
-interface is write-only; no MISO connection is required.
+The module uses an ST7789V controller and four-wire SPI. Firmware uses
+SPI3 at 20 MHz with RGB565 pixel data. The interface is write-only; no
+MISO connection is required.
 
-Use the complete seven-pin Waveshare harness and keep it short. Place
+Use the complete eight-pin Waveshare harness and keep it short. Place
 local supply decoupling near the display connector. Keep the harness
 away from motor phase wires, battery conductors, switching nodes, and
 the IMU signal/ground path.

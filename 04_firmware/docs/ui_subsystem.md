@@ -1,8 +1,8 @@
 # UI subsystem
 
 The UI subsystem provides local status and deliberate user requests on
-the Waveshare 1.5-inch RGB OLED module. The display uses an SSD1351
-controller, 128 x 128 RGB565 framebuffer, and four-wire SPI.
+the Waveshare 2-inch IPS LCD module. The display uses an ST7789V
+controller, a 240 x 320 RGB565 panel, and four-wire SPI.
 
 Portable UI code has no ESP-IDF, FreeRTOS, GPIO, SPI-host, or board-pin
 dependencies.
@@ -145,9 +145,9 @@ ui_canvas
 ui_pages
     Formats STATUS, CRSF, IMU, and actuator snapshots on a ui_canvas.
 
-drv_ssd1351
-    Owns SSD1351 initialization, RGB565 framebuffer storage format,
-    controller commands, and display updates.
+drv_st7789
+    Owns ST7789 initialization, orientation, RGB565 framebuffer storage,
+    2x pixel scaling, controller commands, and display updates.
 
 bsp_display_spi_esp32
     Owns the ESP32 SPI3 device, D/C pin, reset pin, and transfer
@@ -161,6 +161,30 @@ task_ui
     Publishes a timestamped manual-drive request.
     Does not grant motion permission or write CAN commands.
 ```
+
+## Display orientation and memory use
+
+Edit `APP_DISPLAY_ORIENTATION` in:
+
+```text
+04_firmware/platforms/esp32/main/config/config_ui.h
+```
+
+Available values are:
+
+```c
+DRV_ST7789_ORIENTATION_0
+DRV_ST7789_ORIENTATION_90
+DRV_ST7789_ORIENTATION_180
+DRV_ST7789_ORIENTATION_270
+```
+
+The default is `DRV_ST7789_ORIENTATION_90`, which presents a landscape
+160 x 120 logical canvas on the physical 320 x 240 orientation. The
+portrait orientations automatically present a 120 x 160 canvas. Each
+logical pixel is sent as a 2 x 2 physical block, keeping the static
+framebuffer at 38,400 bytes. Page rendering reads the canvas dimensions
+and does not depend on an ESP32 pin or ST7789 command.
 
 ## CAN manual-drive interaction
 

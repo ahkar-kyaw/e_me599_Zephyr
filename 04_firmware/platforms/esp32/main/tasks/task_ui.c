@@ -4,7 +4,7 @@
 #include "config_imu.h"
 #include "config_rc.h"
 #include "config_ui.h"
-#include "drivers/drv_ssd1351.h"
+#include "drivers/drv_st7789.h"
 #include "safety/safety_imu.h"
 #include "safety/safety_rc.h"
 #include "task_imu.h"
@@ -28,9 +28,9 @@
 
 static const char *TAG = "task_ui";
 
-static drv_ssd1351_t g_display;
+static drv_st7789_t g_display;
 static _Alignas(4)
-    uint8_t g_display_framebuffer[DRV_SSD1351_FRAMEBUFFER_SIZE];
+    uint8_t g_display_framebuffer[DRV_ST7789_FRAMEBUFFER_SIZE];
 static app_manual_drive_request_t g_manual_drive_request;
 static portMUX_TYPE g_manual_drive_request_lock =
     portMUX_INITIALIZER_UNLOCKED;
@@ -83,8 +83,8 @@ static void task_ui_entry(void *argument)
     (void)argument;
 
     bsp_display_spi_esp32_t display_io;
-    drv_ssd1351_config_t display_config =
-        drv_ssd1351_default_config();
+    drv_st7789_config_t display_config =
+        drv_st7789_default_config();
     safety_rc_config_t rc_safety_config = safety_rc_default_config();
     safety_imu_config_t imu_safety_config = safety_imu_default_config();
     ui_rc_input_t rc_input;
@@ -122,7 +122,7 @@ static void task_ui_entry(void *argument)
             (APP_UI_RC_INPUT_ENABLE_ACTIVE_HIGH != 0),
     };
 
-    display_config.master_contrast = APP_DISPLAY_MASTER_CONTRAST;
+    display_config.orientation = APP_DISPLAY_ORIENTATION;
 
     rc_safety_config.max_age_us = APP_RC_MAX_AGE_US;
     rc_safety_config.channel_min = APP_RC_CHANNEL_MIN;
@@ -146,18 +146,6 @@ static void task_ui_entry(void *argument)
 
     ui_state_init(&ui_state);
 
-    if (!ui_canvas_init(&canvas,
-                        &g_display,
-                        DRV_SSD1351_WIDTH,
-                        DRV_SSD1351_HEIGHT,
-                        task_ui_draw_pixel,
-                        task_ui_fill_rect))
-    {
-        ESP_LOGE(TAG, "invalid UI canvas config");
-        vTaskDelete(NULL);
-        return;
-    }
-
     while (bsp_display_spi_esp32_init(&display_io) !=
            IF_DISPLAY_IO_OK)
     {
@@ -165,15 +153,27 @@ static void task_ui_entry(void *argument)
         vTaskDelay(pdMS_TO_TICKS(APP_UI_RETRY_MS));
     }
 
-    while (drv_ssd1351_init(&g_display,
-                            &display_io.io,
-                            &display_config,
-                            g_display_framebuffer,
-                            sizeof(g_display_framebuffer)) !=
-           DRV_SSD1351_OK)
+    while (drv_st7789_init(&g_display,
+                           &display_io.io,
+                           &display_config,
+                           g_display_framebuffer,
+                           sizeof(g_display_framebuffer)) !=
+           DRV_ST7789_OK)
     {
-        ESP_LOGE(TAG, "SSD1351 init failed");
+        ESP_LOGE(TAG, "ST7789 init failed");
         vTaskDelay(pdMS_TO_TICKS(APP_UI_RETRY_MS));
+    }
+
+    if (!ui_canvas_init(&canvas,
+                        &g_display,
+                        drv_st7789_width(&g_display),
+                        drv_st7789_height(&g_display),
+                        task_ui_draw_pixel,
+                        task_ui_fill_rect))
+    {
+        ESP_LOGE(TAG, "invalid UI canvas config");
+        vTaskDelete(NULL);
+        return;
     }
 
     ESP_LOGI(TAG,
@@ -271,9 +271,9 @@ static void task_ui_entry(void *argument)
 
             ui_pages_render(&canvas, &ui_state, &model);
 
-            if (drv_ssd1351_update(&g_display) != DRV_SSD1351_OK)
+            if (drv_st7789_update(&g_display) != DRV_ST7789_OK)
             {
-                ESP_LOGE(TAG, "SSD1351 update failed");
+                ESP_LOGE(TAG, "ST7789 update failed");
             }
 
             last_render = now_tick;
@@ -298,7 +298,7 @@ static void task_ui_draw_pixel(void *context,
                                uint16_t y,
                                ui_color_t color)
 {
-    drv_ssd1351_draw_pixel((drv_ssd1351_t *)context, x, y, color);
+    drv_st7789_draw_pixel((drv_st7789_t *)context, x, y, color);
 }
 
 static void task_ui_fill_rect(void *context,
@@ -308,10 +308,10 @@ static void task_ui_fill_rect(void *context,
                               uint16_t height,
                               ui_color_t color)
 {
-    drv_ssd1351_fill_rect((drv_ssd1351_t *)context,
-                          x,
-                          y,
-                          width,
-                          height,
-                          color);
+    drv_st7789_fill_rect((drv_st7789_t *)context,
+                         x,
+                         y,
+                         width,
+                         height,
+                         color);
 }

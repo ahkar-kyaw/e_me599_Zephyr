@@ -3,8 +3,8 @@
 Zephyr firmware is organized to support an ESP32 bring-up platform and
 an STM32H723ZG target platform while keeping reusable robot logic
 portable. The active ESP32 target includes the IMU pipeline, a
-16-channel CRSF receiver path, an SSD1351 RGB status display, and a
-CubeMars feedback path with a safety-gated manual velocity test.
+16-channel CRSF receiver path, an ST7789 status display, and a
+CubeMars feedback path with safety-gated manual velocity control.
 
 ## Current targets
 
@@ -40,10 +40,10 @@ common/
     No board-specific assumptions.
 
 platforms/esp32/
-    ESP32 startup, build files, board definitions, BSPs, FreeRTOS tasks, and bring-up tests.
+    ESP32 startup, build files, board definitions, BSPs, and FreeRTOS tasks.
 
 platforms/stm32/
-    STM32CubeMX generated code, STM32 app code, board support, build files, and bring-up tests.
+    STM32CubeMX generated code, user-owned app code, and build files.
 
 docs/
     Firmware architecture notes, naming rules, subsystem notes, and electrical interface documentation.
@@ -55,8 +55,8 @@ docs/
 app_main
     starts task_imu
     starts task_motor when APP_ENABLE_ACTUATORS is enabled
+    starts task_rc and task_ui when enabled
     starts task_supervisor and task_safety for manual commissioning
-    starts bring-up tests when APP_ENABLE_BRINGUP_TESTS is enabled
 
 task_imu
     owns the IMU hardware
@@ -67,18 +67,12 @@ task_imu
     runs the attitude estimator
     publishes imu_snapshot_t
 
-test_imu_snapshot
-    reads imu_snapshot_t
-    runs IMU safety checks
-    extracts balance_state_t
-    prints the full IMU pipeline
-
 task_rc
     owns UART2 and receives RadioMaster RP2 CRSF data
     publishes all 16 raw channels with timestamps and error counters
 
 task_ui
-    owns the SSD1351 SPI display
+    owns the ST7789 SPI display
     shows STATUS, CRSF, IMU, and CAN pages
     uses a portable locked/browse/interact UI state machine
     publishes a timestamped CAN-page manual-drive request
@@ -97,13 +91,6 @@ task_motor
     transmits only fresh, safety-approved servo velocity commands
     sends no command automatically at boot
 
-test_rc_snapshot
-    performs bring-up logging for all 16 channels
-    applies portable RC freshness and range checks
-
-test_actuator_snapshot
-    logs essential CAN, M1 feedback, drive command, and transmit errors
-    cannot transmit actuator commands
 ```
 
 ## Common firmware flow
@@ -124,8 +111,8 @@ proto_crsf
 proto_cubemars_ak
     portable CubeMars servo command packing and feedback decoding
 
-drv_ssd1351
-    portable SSD1351 RGB565 framebuffer driver
+drv_st7789
+    portable ST7789 RGB565 driver with configurable orientation
 
 safety_rc
     checks RC validity, freshness, and raw channel range
@@ -195,11 +182,6 @@ cmake --build --preset Debug
 ## Build-time flags
 
 ```text
-APP_ENABLE_BRINGUP_TESTS
-    Enables temporary bring-up tests.
-    ESP32 sets this in main/CMakeLists.txt.
-    STM32 sets this in CMakePresets.json.
-
 APP_ENABLE_RC_RECEIVER
     Starts the ESP32 CRSF receiver task.
 
@@ -210,17 +192,6 @@ APP_ENABLE_ACTUATORS
     Starts the ESP32 actuator task. It always receives feedback and
     accepts only fresh commands approved by task_safety.
 
-APP_ENABLE_ACTUATOR_DIAGNOSTICS
-    Enables the read-only actuator serial logger when bring-up tests are
-    enabled.
-
-APP_ENABLE_CAN_ONLY_LOGGING
-    Suppresses recurring non-CAN application logs during CAN bring-up.
-
-APP_ENABLE_DEBUG_LED_TEST
-APP_ENABLE_IMU_DIAGNOSTICS
-APP_ENABLE_RC_DIAGNOSTICS
-    Independently control the other bring-up diagnostics.
 ```
 
 ## Development rules
@@ -261,7 +232,7 @@ Do not let UI, tests, or control write directly to motors.
     IMU driver, calibration, mounting, estimator, safety, and balance-state pipeline.
 
 04_firmware/docs/ui_subsystem.md
-    OLED pages, RC controls, UI state machine, CRSF ranges, and future tuning boundary.
+    LCD pages, RC controls, UI state machine, CRSF ranges, and future tuning boundary.
 
 04_firmware/docs/actuator_subsystem.md
     CubeMars servo CAN, four-motor configuration, feedback snapshots,

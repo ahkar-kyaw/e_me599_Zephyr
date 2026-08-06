@@ -4,15 +4,6 @@ This document records firmware-facing electrical assumptions. It should be updat
 
 ## ESP32 bring-up pin map
 
-### Debug LED
-
-```text
-Signal              ESP32 GPIO
-BOARD_LED_DEBUG1    GPIO2
-```
-
-GPIO2 is used only for the onboard debug LED during bring-up.
-
 ### ISM330DHCX IMU over SPI
 
 ```text
@@ -29,17 +20,6 @@ GND         GND             Common ground
 ```
 
 Current firmware polling does not use INT1 or INT2. Future firmware may use INT1 for data-ready timing and INT2 for FIFO or event interrupts.
-
-## STM32 Nucleo LED map
-
-```text
-Signal      STM32 pin       CubeMX label
-LD1         PB0             DBG_LED1
-LD2         PE1             DBG_LED2
-LD3         PB14            DBG_LED3
-```
-
-Application code should use `board_led.h` rather than CubeMX GPIO macros directly.
 
 ## CAN motor bus
 
@@ -107,7 +87,7 @@ Regenerative-energy handling
 ```
 
 Keep battery and motor-current paths physically separated from the CAN
-pair, ESP32 logic wiring, OLED harness, receiver, and IMU supply and
+pair, ESP32 logic wiring, LCD harness, receiver, and IMU supply and
 signals. Cross noisy conductors at right angles where separation cannot
 be maintained.
 
@@ -154,14 +134,14 @@ Keep the receiver and antenna away from motor phase wires, high-current
 battery wiring, switching regulators, and the CAN transceiver. Add local
 supply decoupling near the receiver connector.
 
-### Waveshare 1.5-inch RGB OLED display
+### Waveshare 2-inch IPS LCD module
 
 ```text
 Purpose
     Local status, diagnostics, and future tuning UI.
 
 ESP32 interface
-    SSD1351 controller
+    ST7789V controller
     Four-wire SPI
     SPI3 host
     CLK on GPIO14
@@ -169,22 +149,22 @@ ESP32 interface
     CS on GPIO25, active low
     D/C on GPIO21, command low and data high
     RST on GPIO22, active low
-    8 MHz
+    20 MHz
     No MISO connection
 
 Power
     Module VCC uses 3.3 V
     Module logic therefore uses 3.3 V
-    OLED and ESP32 grounds must be common
+    Module BL is tied to 3.3 V for an always-on backlight
+    LCD and ESP32 grounds must be common
 ```
 
-The selected module is the Waveshare 1.5-inch RGB OLED Module with a
-128 x 128 SSD1351 controller. Leave its interface selection in the
-factory-default four-wire SPI position. Do not configure the module for
-three-wire SPI.
+The selected module is the Waveshare 2-inch LCD Module, 240 x 320 IPS,
+with an ST7789V controller. The module exposes DIN only; it does not
+return data to the ESP32.
 
 ```text
-Waveshare seven-pin connector
+Waveshare eight-pin connector
     Pin 1    3.3 V
     Pin 2    GND
     Pin 3    DIN / GPIO13
@@ -192,13 +172,13 @@ Waveshare seven-pin connector
     Pin 5    CS / GPIO25
     Pin 6    D/C / GPIO21
     Pin 7    RST / GPIO22
+    Pin 8    BL / 3.3 V
 ```
 
-The Waveshare documentation lists approximately 60 mA at 3.3 V for a
-full-white screen and approximately 4 mA for full black. Size the 3.3 V
-rail for the worst case and place local decoupling near the display
-connector. The default UI uses a black background and reduced master
-contrast to limit current and OLED aging.
+The firmware does not currently dim or switch the backlight. If
+backlight control is later required, assign a board-level GPIO and add
+it to the display BSP; do not add a controller-specific dependency to
+the portable UI.
 
 Keep the SPI harness short and route it away from motor phase wires,
 high-current battery wiring, switching nodes, and CAN transceiver

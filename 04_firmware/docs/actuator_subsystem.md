@@ -47,7 +47,6 @@ task_motor
     v
 actuator_snapshot_t
     |
-    +--> test_actuator_snapshot
     +--> task_safety
     +--> task_ui
 ```
@@ -82,9 +81,6 @@ task_safety
     Checks RC, CAN, actuator feedback, driver fault, selected slot,
     neutral stick, and fresh supervisor mode.
 
-test_actuator_snapshot
-    Reads and logs the task-owned snapshot.
-    Does not own CAN and cannot command an actuator.
 ```
 
 ## Actuator configuration
@@ -241,34 +237,6 @@ actuator's CAN command timeout before relying on remote commands.
 6. Move CH2 slightly and verify command and feedback direction.
 7. Center CH2, then move SD low before ending the test.
 8. Confirm DRV STOPPING, followed by DRV OFF.
-```
-
-Expected monitor tag:
-
-```text
-test_actuator
-```
-
-The current CAN bring-up configuration enables this read-only logger,
-suppresses recurring non-CAN application logs, and prints one combined
-line every two seconds. Change
-`APP_ACTUATOR_DIAGNOSTIC_PERIOD_MS` in `config_actuator.h` to adjust the
-period. ESP32 ROM and bootloader messages may still appear once before
-the application applies its log filter.
-
-The normal serial line intentionally contains only:
-
-```text
-CAN           ESP32 TWAI bus state
-M1            WAIT, OK, STALE, or FAULT
-P             output position in degrees
-V             electrical RPM, not output-shaft RPM
-I             measured current in amperes
-T             driver temperature in degrees Celsius
-F             CubeMars driver fault code
-DRV           OFF, BLOCK, WAIT, LIVE, or STOP
-CMD           safety-approved velocity command in ERPM
-TXE           failed CAN command transmission attempts
 ```
 
 No command is transmitted automatically at boot. Transmission begins

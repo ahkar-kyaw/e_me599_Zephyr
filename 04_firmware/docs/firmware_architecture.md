@@ -124,7 +124,7 @@ bsp_display_spi_esp32
 if_display_io_t
     |
     v
-drv_ssd1351
+drv_st7789
     |
     v
 RGB565 framebuffer
@@ -173,7 +173,6 @@ task_motor
     v
 actuator_snapshot_t
     |
-    +--> test_actuator_snapshot
     +--> task_ui
     +--> task_safety
 
@@ -206,7 +205,7 @@ task_rc
     Publishes the latest 16-channel RC snapshot.
 
 task_ui
-    Owns the SSD1351 display and static RGB565 framebuffer.
+    Owns the ST7789 display and static RGB565 framebuffer.
     Reads snapshots, updates the portable UI state, and displays status.
 
 task_motor

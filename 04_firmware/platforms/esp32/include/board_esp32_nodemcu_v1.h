@@ -9,12 +9,6 @@
 #define BOARD_MCU_NAME      "ESP32"
 #define BOARD_PLATFORM_NAME "esp32"
 
-/* Board debug LED. */
-#define BOARD_DEBUG_LED1_GPIO            GPIO_NUM_2
-#define BOARD_DEBUG_LED_ACTIVE_LEVEL     1
-#define BOARD_DEBUG_LED_INACTIVE_LEVEL   0
-#define BOARD_DEBUG_LED_PERIOD_MS        500u
-
 /* ISM330DHCX IMU SPI bus. */
 #define BOARD_IMU_SPI_HOST               SPI2_HOST
 #define BOARD_IMU_SPI_SCLK_GPIO          GPIO_NUM_18
@@ -28,14 +22,14 @@
 #define BOARD_IMU_INT1_GPIO              GPIO_NUM_34
 #define BOARD_IMU_INT2_GPIO              GPIO_NUM_35
 
-/* Waveshare SSD1351 display on a dedicated SPI bus. */
+/* Waveshare ST7789 display on a dedicated SPI bus. */
 #define BOARD_DISPLAY_SPI_HOST           SPI3_HOST
 #define BOARD_DISPLAY_SPI_SCLK_GPIO      GPIO_NUM_14
 #define BOARD_DISPLAY_SPI_MOSI_GPIO      GPIO_NUM_13
 #define BOARD_DISPLAY_SPI_CS_GPIO        GPIO_NUM_25
 #define BOARD_DISPLAY_DC_GPIO            GPIO_NUM_21
 #define BOARD_DISPLAY_RESET_GPIO         GPIO_NUM_22
-#define BOARD_DISPLAY_SPI_CLOCK_HZ       8000000
+#define BOARD_DISPLAY_SPI_CLOCK_HZ       20000000
 #define BOARD_DISPLAY_SPI_MODE           0
 
 /* ExpressLRS receiver CRSF UART. */

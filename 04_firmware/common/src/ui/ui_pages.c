@@ -18,8 +18,8 @@
 #define UI_COLOR_MAGENTA     ((ui_color_t)0xF81Fu)
 
 #define UI_HEADER_HEIGHT 21u
-#define UI_FOOTER_Y      114u
 #define UI_FOOTER_HEIGHT 14u
+#define UI_LANDSCAPE_FOOTER_Y 106u
 
 static void ui_pages_draw_header(ui_canvas_t *canvas,
                                  const ui_state_t *state);
@@ -59,6 +59,8 @@ static const char *ui_pages_manual_drive_state(
 static ui_color_t ui_pages_manual_drive_color(
     const app_manual_drive_snapshot_t *snapshot);
 static uint32_t ui_pages_age_ms(uint64_t age_us);
+static uint16_t ui_pages_footer_y(const ui_canvas_t *canvas);
+static uint16_t ui_pages_content_offset(const ui_canvas_t *canvas);
 static void ui_pages_format_age(char *text,
                                 size_t text_size,
                                 uint64_t age_us,
@@ -182,48 +184,49 @@ static void ui_pages_draw_footer(ui_canvas_t *canvas,
                                  const ui_page_model_t *model)
 {
     char line[16];
+    const uint16_t footer_y = ui_pages_footer_y(canvas);
 
     ui_canvas_fill(canvas,
                    0u,
-                   UI_FOOTER_Y,
+                   footer_y,
                    canvas->width,
                    UI_FOOTER_HEIGHT,
                    UI_COLOR_PANEL);
 
     ui_canvas_draw_text(canvas,
                         4u,
-                        UI_FOOTER_Y + 4u,
+                        footer_y + 4u,
                         "RC",
                         UI_COLOR_MUTED,
                         1u);
     ui_canvas_fill(canvas,
                    18u,
-                   UI_FOOTER_Y + 5u,
+                   footer_y + 5u,
                    5u,
                    5u,
                    ui_pages_rc_color(model->rc_status));
     ui_canvas_draw_text(canvas,
                         27u,
-                        UI_FOOTER_Y + 4u,
+                        footer_y + 4u,
                         "IMU",
                         UI_COLOR_MUTED,
                         1u);
     ui_canvas_fill(canvas,
                    47u,
-                   UI_FOOTER_Y + 5u,
+                   footer_y + 5u,
                    5u,
                    5u,
                    ui_pages_imu_color(model->imu_snapshot,
                                       model->imu_status));
     ui_canvas_draw_text(canvas,
                         56u,
-                        UI_FOOTER_Y + 4u,
+                        footer_y + 4u,
                         "CAN",
                         UI_COLOR_MUTED,
                         1u);
     ui_canvas_fill(canvas,
                    77u,
-                   UI_FOOTER_Y + 5u,
+                   footer_y + 5u,
                    5u,
                    5u,
                    ui_pages_can_bus_color(
@@ -231,7 +234,8 @@ static void ui_pages_draw_footer(ui_canvas_t *canvas,
 
     if ((state->mode == UI_MODE_INTERACT) &&
         (state->page != UI_PAGE_CAN) &&
-        (ui_state_selection_count(state->page) > 1u))
+        (ui_state_selection_count(state->page) > 1u) &&
+        (canvas->width >= 140u))
     {
         (void)snprintf(line,
                        sizeof(line),
@@ -240,8 +244,8 @@ static void ui_pages_draw_footer(ui_canvas_t *canvas,
                        (unsigned int)ui_state_selection_count(
                            state->page));
         ui_pages_draw_right_text(canvas,
-                                 102u,
-                                 UI_FOOTER_Y + 4u,
+                                 (uint16_t)(canvas->width - 34u),
+                                 footer_y + 4u,
                                  line,
                                  UI_COLOR_GREEN,
                                  1u);
@@ -254,7 +258,7 @@ static void ui_pages_draw_footer(ui_canvas_t *canvas,
                    (unsigned int)UI_PAGE_COUNT);
     ui_pages_draw_right_text(canvas,
                              (uint16_t)(canvas->width - 4u),
-                             UI_FOOTER_Y + 4u,
+                             footer_y + 4u,
                              line,
                              UI_COLOR_WHITE,
                              1u);
@@ -264,12 +268,16 @@ static void ui_pages_render_status(ui_canvas_t *canvas,
                                    const ui_page_model_t *model)
 {
     char line[24];
+    const uint16_t y_offset = ui_pages_content_offset(canvas);
 
-    ui_canvas_fill(canvas, 4u, 28u, 120u, 20u, UI_COLOR_PANEL_LIGHT);
-    ui_canvas_draw_text(canvas, 9u, 34u, "RC", UI_COLOR_MUTED, 1u);
+    ui_canvas_fill(canvas, 4u, 25u + y_offset,
+                   (uint16_t)(canvas->width - 8u), 18u,
+                   UI_COLOR_PANEL_LIGHT);
+    ui_canvas_draw_text(canvas, 9u, 31u + y_offset,
+                        "RC", UI_COLOR_MUTED, 1u);
     ui_canvas_draw_text(canvas,
                         31u,
-                        34u,
+                        31u + y_offset,
                         ui_pages_rc_state(model->rc_status),
                         ui_pages_rc_color(model->rc_status),
                         1u);
@@ -280,17 +288,20 @@ static void ui_pages_render_status(ui_canvas_t *canvas,
         (model->rc_status->fault_flags &
          SAFETY_RC_FAULT_NO_DATA) == 0u);
     ui_pages_draw_right_text(canvas,
-                             119u,
-                             34u,
+                             (uint16_t)(canvas->width - 9u),
+                             31u + y_offset,
                              line,
                              UI_COLOR_MUTED,
                              1u);
 
-    ui_canvas_fill(canvas, 4u, 53u, 120u, 20u, UI_COLOR_PANEL_LIGHT);
-    ui_canvas_draw_text(canvas, 9u, 59u, "IMU", UI_COLOR_MUTED, 1u);
+    ui_canvas_fill(canvas, 4u, 47u + y_offset,
+                   (uint16_t)(canvas->width - 8u), 18u,
+                   UI_COLOR_PANEL_LIGHT);
+    ui_canvas_draw_text(canvas, 9u, 53u + y_offset,
+                        "IMU", UI_COLOR_MUTED, 1u);
     ui_canvas_draw_text(canvas,
                         37u,
-                        59u,
+                        53u + y_offset,
                         ui_pages_imu_state(model->imu_snapshot,
                                            model->imu_status),
                         ui_pages_imu_color(model->imu_snapshot,
@@ -301,8 +312,8 @@ static void ui_pages_render_status(ui_canvas_t *canvas,
                         model->imu_status->age_us,
                         model->imu_snapshot->valid);
     ui_pages_draw_right_text(canvas,
-                             119u,
-                             59u,
+                             (uint16_t)(canvas->width - 9u),
+                             53u + y_offset,
                              line,
                              UI_COLOR_MUTED,
                              1u);
@@ -312,14 +323,16 @@ static void ui_pages_render_status(ui_canvas_t *canvas,
                    "R %+5.1f",
                    (double)(model->imu_snapshot->attitude.roll_rad *
                             UI_RAD_TO_DEG));
-    ui_canvas_draw_text(canvas, 7u, 79u, line, UI_COLOR_WHITE, 2u);
+    ui_canvas_draw_text(canvas, 7u, 70u + y_offset,
+                        line, UI_COLOR_WHITE, 2u);
 
     (void)snprintf(line,
                    sizeof(line),
                    "P %+5.1f",
                    (double)(model->imu_snapshot->attitude.pitch_rad *
                             UI_RAD_TO_DEG));
-    ui_canvas_draw_text(canvas, 7u, 97u, line, UI_COLOR_WHITE, 2u);
+    ui_canvas_draw_text(canvas, 7u, 87u + y_offset,
+                        line, UI_COLOR_WHITE, 2u);
 }
 
 static void ui_pages_render_rc(ui_canvas_t *canvas,
@@ -329,16 +342,19 @@ static void ui_pages_render_rc(ui_canvas_t *canvas,
     char line[24];
     const uint32_t first_channel =
         (uint32_t)state->selection * 8u;
+    const uint16_t y_offset = ui_pages_content_offset(canvas);
+    const uint16_t right_column =
+        (uint16_t)((canvas->width / 2u) + 6u);
 
     ui_canvas_draw_text(canvas,
                         4u,
-                        27u,
+                        25u + y_offset,
                         "LINK",
                         UI_COLOR_MUTED,
                         1u);
     ui_canvas_draw_text(canvas,
                         34u,
-                        27u,
+                        25u + y_offset,
                         ui_pages_rc_state(model->rc_status),
                         ui_pages_rc_color(model->rc_status),
                         1u);
@@ -349,8 +365,8 @@ static void ui_pages_render_rc(ui_canvas_t *canvas,
         (model->rc_status->fault_flags &
          SAFETY_RC_FAULT_NO_DATA) == 0u);
     ui_pages_draw_right_text(canvas,
-                             124u,
-                             27u,
+                             (uint16_t)(canvas->width - 4u),
+                             25u + y_offset,
                              line,
                              UI_COLOR_MUTED,
                              1u);
@@ -359,7 +375,8 @@ static void ui_pages_render_rc(ui_canvas_t *canvas,
     {
         const uint32_t left_channel = first_channel + row;
         const uint32_t right_channel = first_channel + row + 4u;
-        const uint16_t y = (uint16_t)(44u + (row * 13u));
+        const uint16_t y =
+            (uint16_t)(38u + y_offset + (row * 12u));
 
         (void)snprintf(line,
                        sizeof(line),
@@ -375,7 +392,8 @@ static void ui_pages_render_rc(ui_canvas_t *canvas,
                        (unsigned long)(right_channel + 1u),
                        (unsigned int)model->rc_snapshot->channel[
                            right_channel]);
-        ui_canvas_draw_text(canvas, 70u, y, line, UI_COLOR_WHITE, 1u);
+        ui_canvas_draw_text(canvas, right_column, y,
+                            line, UI_COLOR_WHITE, 1u);
     }
 
     (void)snprintf(line,
@@ -383,7 +401,8 @@ static void ui_pages_render_rc(ui_canvas_t *canvas,
                    "CRC %lu  PARSE %lu",
                    (unsigned long)model->rc_snapshot->crc_error_count,
                    (unsigned long)model->rc_snapshot->parse_error_count);
-    ui_canvas_draw_text(canvas, 4u, 101u, line, UI_COLOR_MUTED, 1u);
+    ui_canvas_draw_text(canvas, 4u, 91u + y_offset,
+                        line, UI_COLOR_MUTED, 1u);
 }
 
 static void ui_pages_render_imu(ui_canvas_t *canvas,
@@ -391,6 +410,7 @@ static void ui_pages_render_imu(ui_canvas_t *canvas,
                                 const ui_page_model_t *model)
 {
     char line[24];
+    const uint16_t y_offset = ui_pages_content_offset(canvas);
 
     if (state->selection == 0u)
     {
@@ -399,40 +419,44 @@ static void ui_pages_render_imu(ui_canvas_t *canvas,
                        "R %+5.1f",
                        (double)(model->imu_snapshot->attitude.roll_rad *
                                 UI_RAD_TO_DEG));
-        ui_canvas_draw_text(canvas, 7u, 28u, line, UI_COLOR_WHITE, 2u);
+        ui_canvas_draw_text(canvas, 7u, 25u + y_offset,
+                            line, UI_COLOR_WHITE, 2u);
 
         (void)snprintf(line,
                        sizeof(line),
                        "P %+5.1f",
                        (double)(model->imu_snapshot->attitude.pitch_rad *
                                 UI_RAD_TO_DEG));
-        ui_canvas_draw_text(canvas, 7u, 50u, line, UI_COLOR_WHITE, 2u);
+        ui_canvas_draw_text(canvas, 7u, 45u + y_offset,
+                            line, UI_COLOR_WHITE, 2u);
 
         (void)snprintf(line,
                        sizeof(line),
                        "Y %+5.1f",
                        (double)(model->imu_snapshot->attitude.yaw_rad *
                                 UI_RAD_TO_DEG));
-        ui_canvas_draw_text(canvas, 7u, 72u, line, UI_COLOR_WHITE, 2u);
+        ui_canvas_draw_text(canvas, 7u, 65u + y_offset,
+                            line, UI_COLOR_WHITE, 2u);
 
         (void)snprintf(line,
                        sizeof(line),
                        "RATE %+6.3f  CAL %s",
                        (double)model->imu_snapshot->attitude.pitch_rate_rps,
                        model->imu_snapshot->calibrated ? "YES" : "NO");
-        ui_canvas_draw_text(canvas, 4u, 101u, line, UI_COLOR_MUTED, 1u);
+        ui_canvas_draw_text(canvas, 4u, 92u + y_offset,
+                            line, UI_COLOR_MUTED, 1u);
     }
     else
     {
         ui_canvas_draw_text(canvas,
                             4u,
-                            28u,
+                            25u + y_offset,
                             "ACCEL",
                             UI_COLOR_CYAN,
                             1u);
         ui_canvas_draw_text(canvas,
                             70u,
-                            28u,
+                            25u + y_offset,
                             "GYRO",
                             UI_COLOR_MAGENTA,
                             1u);
@@ -440,7 +464,8 @@ static void ui_pages_render_imu(ui_canvas_t *canvas,
         for (uint32_t axis = 0u; axis < 3u; axis++)
         {
             static const char axis_name[] = {'X', 'Y', 'Z'};
-            const uint16_t y = (uint16_t)(43u + (axis * 15u));
+            const uint16_t y =
+                (uint16_t)(38u + y_offset + (axis * 13u));
 
             (void)snprintf(line,
                            sizeof(line),
@@ -463,13 +488,15 @@ static void ui_pages_render_imu(ui_canvas_t *canvas,
                        sizeof(line),
                        "TEMP %+4.1fC",
                        (double)model->imu_snapshot->data.temp_c);
-        ui_canvas_draw_text(canvas, 4u, 92u, line, UI_COLOR_MUTED, 1u);
+        ui_canvas_draw_text(canvas, 4u, 80u + y_offset,
+                            line, UI_COLOR_MUTED, 1u);
 
         (void)snprintf(line,
                        sizeof(line),
                        "NORM %5.2f",
                        (double)model->imu_status->accel_norm_mps2);
-        ui_canvas_draw_text(canvas, 4u, 103u, line, UI_COLOR_MUTED, 1u);
+        ui_canvas_draw_text(canvas, 4u, 92u + y_offset,
+                            line, UI_COLOR_MUTED, 1u);
     }
 }
 
@@ -484,17 +511,19 @@ static void ui_pages_render_can(ui_canvas_t *canvas,
     const actuator_feedback_snapshot_t *feedback =
         &snapshot->actuator[actuator_index];
     char line[32];
+    const uint16_t y_offset = ui_pages_content_offset(canvas);
 
-    ui_canvas_draw_text(canvas, 4u, 27u, "BUS", UI_COLOR_MUTED, 1u);
+    ui_canvas_draw_text(canvas, 4u, 25u + y_offset,
+                        "BUS", UI_COLOR_MUTED, 1u);
     ui_canvas_draw_text(canvas,
                         28u,
-                        27u,
+                        25u + y_offset,
                         ui_pages_can_bus_state(snapshot->bus_state),
                         ui_pages_can_bus_color(snapshot->bus_state),
                         1u);
     ui_pages_draw_right_text(canvas,
-                             124u,
-                             27u,
+                             (uint16_t)(canvas->width - 4u),
+                             25u + y_offset,
                              "1 MBIT/S",
                              UI_COLOR_MUTED,
                              1u);
@@ -503,19 +532,23 @@ static void ui_pages_render_can(ui_canvas_t *canvas,
                    sizeof(line),
                    "TX ERR %lu",
                    (unsigned long)snapshot->command_tx_error_count);
-    ui_canvas_draw_text(canvas, 4u, 40u, line, UI_COLOR_MUTED, 1u);
+    ui_canvas_draw_text(canvas, 4u, 37u + y_offset,
+                        line, UI_COLOR_MUTED, 1u);
 
-    ui_canvas_fill(canvas, 4u, 53u, 120u, 19u, UI_COLOR_PANEL_LIGHT);
+    ui_canvas_fill(canvas, 4u, 49u + y_offset,
+                   (uint16_t)(canvas->width - 8u), 18u,
+                   UI_COLOR_PANEL_LIGHT);
     (void)snprintf(line,
                    sizeof(line),
                    "M%lu  ID %u",
                    (unsigned long)(actuator_index + 1u),
                    (unsigned int)feedback->motor_id);
-    ui_canvas_draw_text(canvas, 9u, 59u, line, UI_COLOR_WHITE, 1u);
+    ui_canvas_draw_text(canvas, 9u, 55u + y_offset,
+                        line, UI_COLOR_WHITE, 1u);
     ui_pages_draw_right_text(
         canvas,
-        119u,
-        59u,
+        (uint16_t)(canvas->width - 9u),
+        55u + y_offset,
         ui_pages_actuator_state(snapshot, feedback),
         ui_pages_actuator_color(snapshot, feedback),
         1u);
@@ -524,7 +557,7 @@ static void ui_pages_render_can(ui_canvas_t *canvas,
     {
         ui_canvas_draw_text(canvas,
                             24u,
-                            82u,
+                            75u + y_offset,
                             "SLOT DISABLED",
                             UI_COLOR_MUTED,
                             1u);
@@ -538,7 +571,7 @@ static void ui_pages_render_can(ui_canvas_t *canvas,
                        ui_pages_manual_drive_state(drive));
         ui_canvas_draw_text(canvas,
                             4u,
-                            102u,
+                            96u + y_offset,
                             line,
                             ui_pages_manual_drive_color(drive),
                             1u);
@@ -550,7 +583,8 @@ static void ui_pages_render_can(ui_canvas_t *canvas,
                    "P%+.1f V%+.0f",
                    (double)feedback->position_deg,
                    (double)feedback->velocity_erpm);
-    ui_canvas_draw_text(canvas, 4u, 78u, line, UI_COLOR_WHITE, 1u);
+    ui_canvas_draw_text(canvas, 4u, 72u + y_offset,
+                        line, UI_COLOR_WHITE, 1u);
 
     (void)snprintf(line,
                    sizeof(line),
@@ -560,7 +594,7 @@ static void ui_pages_render_can(ui_canvas_t *canvas,
                    (unsigned int)feedback->fault_code);
     ui_canvas_draw_text(canvas,
                         4u,
-                        90u,
+                        84u + y_offset,
                         line,
                         (feedback->fault_code == 0u) ?
                             UI_COLOR_MUTED : UI_COLOR_RED,
@@ -586,7 +620,7 @@ static void ui_pages_render_can(ui_canvas_t *canvas,
 
     ui_canvas_draw_text(canvas,
                         4u,
-                        102u,
+                        96u + y_offset,
                         line,
                         ui_pages_manual_drive_color(drive),
                         1u);
@@ -853,6 +887,24 @@ static uint32_t ui_pages_age_ms(uint64_t age_us)
     const uint64_t age_ms = age_us / 1000u;
 
     return (age_ms > UINT32_MAX) ? UINT32_MAX : (uint32_t)age_ms;
+}
+
+static uint16_t ui_pages_footer_y(const ui_canvas_t *canvas)
+{
+    if ((canvas == NULL) || (canvas->height < UI_FOOTER_HEIGHT))
+    {
+        return 0u;
+    }
+
+    return (uint16_t)(canvas->height - UI_FOOTER_HEIGHT);
+}
+
+static uint16_t ui_pages_content_offset(const ui_canvas_t *canvas)
+{
+    const uint16_t footer_y = ui_pages_footer_y(canvas);
+
+    return (footer_y > UI_LANDSCAPE_FOOTER_Y) ?
+        (uint16_t)((footer_y - UI_LANDSCAPE_FOOTER_Y) / 2u) : 0u;
 }
 
 static void ui_pages_format_age(char *text,

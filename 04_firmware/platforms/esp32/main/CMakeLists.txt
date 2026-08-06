@@ -1,7 +1,6 @@
 idf_component_register(
     SRCS
         "main.c"
-        "board/board_led.c"
         "bsp/bsp_can_esp32.c"
         "bsp/bsp_crsf_uart_esp32.c"
         "bsp/bsp_display_spi_esp32.c"
@@ -12,13 +11,8 @@ idf_component_register(
         "tasks/task_safety.c"
         "tasks/task_supervisor.c"
         "tasks/task_ui.c"
-        "tests/test_actuator_snapshot.c"
-        "tests/test_debug_led.c"
-        "tests/test_imu_snapshot.c"
-        "tests/test_rc_snapshot.c"
-        "../../../common/src/app/app_balance_state.c"
         "../../../common/src/drivers/drv_ism330dhcx.c"
-        "../../../common/src/drivers/drv_ssd1351.c"
+        "../../../common/src/drivers/drv_st7789.c"
         "../../../common/src/estimation/est_imu_calibration.c"
         "../../../common/src/estimation/est_attitude.c"
         "../../../common/src/estimation/est_imu_mount.c"
@@ -34,11 +28,9 @@ idf_component_register(
     INCLUDE_DIRS
         "../include"
         "../../../common/include"
-        "board"
         "bsp"
         "config"
         "tasks"
-        "tests"
     PRIV_REQUIRES
         esp_common
         esp_driver_gpio
@@ -56,12 +48,6 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     APP_PLATFORM_ESP32=1
     BOARD_ESP32_NODEMCU_V1=1
     APP_ENABLE_ACTUATORS=1
-    APP_ENABLE_ACTUATOR_DIAGNOSTICS=1
-    APP_ENABLE_CAN_ONLY_LOGGING=1
-    APP_ENABLE_DEBUG_LED_TEST=0
-    APP_ENABLE_IMU_DIAGNOSTICS=0
     APP_ENABLE_RC_RECEIVER=1
-    APP_ENABLE_RC_DIAGNOSTICS=0
     APP_ENABLE_UI=1
-    APP_ENABLE_BRINGUP_TESTS=1
 )

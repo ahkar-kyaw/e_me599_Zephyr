@@ -28,21 +28,6 @@ platforms/stm32/
     app/
         app_main.c
         app_main.h
-
-        board/
-            board_led.c
-            board_led.h
-
-        config/
-            config_app.h
-
-        tasks/
-            task_debug.c
-            task_debug.h
-
-        tests/
-            test_debug_led.c
-            test_debug_led.h
 ```
 
 ## Build
@@ -75,7 +60,8 @@ Drivers/
 
 app/
     User-owned application code.
-    Safe place for tasks, board wrappers, tests, and platform application logic.
+    Safe place for board wrappers, BSPs, tasks, configuration, and
+    platform application logic as they are migrated.
 ```
 
 ## Application entry flow
@@ -90,40 +76,8 @@ Core/Src/freertos.c
     calls app_main_create_tasks inside USER CODE section
 
 app/app_main.c
-    creates user-owned application tasks and optional bring-up tests
-```
-
-## Board support
-
-```text
-include/board_stm32h723_v1.h
-    Board metadata only.
-    Does not include CubeMX generated headers.
-
-app/board/board_led.c
-    Maps generic board LED IDs to CubeMX GPIO labels.
-    Includes main.h because CubeMX GPIO macros live there.
-
-app/board/board_led.h
-    Provides the platform board LED API.
-```
-
-Current Nucleo LED labels:
-
-```text
-DBG_LED1    PB0
-DBG_LED2    PE1
-DBG_LED3    PB14
-```
-
-## Build presets
-
-```text
-Debug
-    APP_ENABLE_BRINGUP_TESTS is ON
-
-Release
-    APP_ENABLE_BRINGUP_TESTS is OFF
+    is the user-owned task creation hook
+    currently creates no tasks until the ESP32 subsystems are migrated
 ```
 
 ## STM32 design rules
@@ -135,4 +89,5 @@ Keep GPIO macro mapping in app/board modules.
 Keep temporary tests under app/tests/.
 Keep long-running tasks under app/tasks/.
 Add common modules through app/CMakeLists.txt only when needed.
+Use only cmake/gcc-arm-none-eabi.cmake for the supported toolchain.
 ```

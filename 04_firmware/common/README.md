@@ -31,7 +31,7 @@ common/
 
         drivers/
             drv_ism330dhcx.h
-            drv_ssd1351.h
+            drv_st7789.h
 
         estimation/
             est_attitude.h
@@ -65,7 +65,7 @@ common/
 
         drivers/
             drv_ism330dhcx.c
-            drv_ssd1351.c
+            drv_st7789.c
 
         estimation/
             est_attitude.c
@@ -117,10 +117,10 @@ drv_ism330dhcx
     Reads raw temperature, gyro, and accelerometer data.
     Converts raw counts to SI units using the active driver configuration.
 
-drv_ssd1351
-    Portable 128 x 128 SSD1351 RGB565 framebuffer driver.
-    Owns controller initialization, pixel storage, rectangles, and
-    display transfers through if_display_io.
+drv_st7789
+    Portable ST7789 RGB565 display driver.
+    Owns controller initialization, orientation, scaled pixel storage,
+    rectangles, and display transfers through if_display_io.
 ```
 
 ### protocols

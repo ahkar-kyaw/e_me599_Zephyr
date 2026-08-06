@@ -2,7 +2,7 @@
 
 The ESP32 platform is the active bring-up target. It uses native
 ESP-IDF with CMake and Ninja and runs the IMU pipeline, CRSF receiver,
-SSD1351 status UI, CubeMars feedback monitor, and a safety-gated manual
+ST7789 status UI, CubeMars feedback monitor, and a safety-gated manual
 velocity commissioning path.
 
 ## Structure
@@ -18,10 +18,6 @@ platforms/esp32/
     main/
         CMakeLists.txt
         main.c
-
-        board/
-            board_led.c
-            board_led.h
 
         bsp/
             bsp_can_esp32.c
@@ -53,15 +49,6 @@ platforms/esp32/
             task_ui.c
             task_ui.h
 
-        tests/
-            test_actuator_snapshot.c
-            test_actuator_snapshot.h
-            test_debug_led.c
-            test_debug_led.h
-            test_imu_snapshot.c
-            test_imu_snapshot.h
-            test_rc_snapshot.c
-            test_rc_snapshot.h
 ```
 
 ## Toolchain
@@ -99,32 +86,14 @@ Exit the serial monitor with `Ctrl+]`.
 APP_PLATFORM_ESP32
 BOARD_ESP32_NODEMCU_V1
 APP_ENABLE_ACTUATORS
-APP_ENABLE_ACTUATOR_DIAGNOSTICS
-APP_ENABLE_CAN_ONLY_LOGGING
-APP_ENABLE_DEBUG_LED_TEST
-APP_ENABLE_IMU_DIAGNOSTICS
 APP_ENABLE_RC_RECEIVER
-APP_ENABLE_RC_DIAGNOSTICS
 APP_ENABLE_UI
-APP_ENABLE_BRINGUP_TESTS
 ```
 
 `APP_ENABLE_ACTUATORS` starts the motor feedback and safety-approved
 command task. No command is transmitted automatically at boot.
-`APP_ENABLE_ACTUATOR_DIAGNOSTICS` starts the read-only actuator serial
-logger when bring-up tests are also enabled.
-`APP_ENABLE_CAN_ONLY_LOGGING` suppresses recurring non-CAN application
-logs during CAN bring-up.
-`APP_ENABLE_DEBUG_LED_TEST`, `APP_ENABLE_IMU_DIAGNOSTICS`, and
-`APP_ENABLE_RC_DIAGNOSTICS` independently control the other diagnostics.
 `APP_ENABLE_RC_RECEIVER` starts the receiver task.
 `APP_ENABLE_UI` starts the display task.
-`APP_ENABLE_BRINGUP_TESTS` is the master diagnostic enable.
-
-The current CAN bring-up configuration enables the actuator logger and
-disables the LED, IMU, and RC diagnostic tasks. The logger produces one
-line every two seconds. ESP32 ROM and bootloader messages may still
-appear once before application logging is configured.
 The current values are defined in `main/CMakeLists.txt`.
 
 ## Board pin map
@@ -162,9 +131,9 @@ bsp_imu_spi_esp32
     Implements if_spi for drv_ism330dhcx.
 
 bsp_display_spi_esp32
-    Initializes the dedicated ESP32 SPI3 display bus at 8 MHz.
+    Initializes the dedicated ESP32 SPI3 display bus at 20 MHz.
     Owns display D/C and reset GPIO.
-    Implements if_display_io for drv_ssd1351.
+    Implements if_display_io for drv_st7789.
 
 bsp_crsf_uart_esp32
     Initializes UART2 for non-inverted 420000-baud CRSF.
@@ -189,7 +158,7 @@ task_rc
     communication error counters.
 
 task_ui
-    Owns the SSD1351 and static RGB565 framebuffer.
+    Owns the ST7789 and static 160 x 120 / 120 x 160 RGB565 canvas.
     Collects RC, IMU, and actuator snapshots.
     Runs the portable UI input mapper and state machine.
     Renders STATUS, CRSF, IMU, and CAN pages.
@@ -212,28 +181,6 @@ task_motor
     Sends no command automatically at boot.
 ```
 
-## Test layer
-
-```text
-test_debug_led
-    Temporary board LED bring-up test.
-
-test_imu_snapshot
-    Prints the IMU, estimator, safety, and balance-state pipeline.
-
-test_rc_snapshot
-    Runs RC validity, freshness, and range checks.
-    Prints all 16 raw CRSF channels and error counters.
-
-test_actuator_snapshot
-    Prints essential CAN state, actuator feedback, drive command, and
-    transmit-error status in one line every two seconds.
-    Reads task_motor snapshots and cannot command an actuator.
-```
-
-Tests read task-owned snapshots. They do not own the underlying hardware
-and cannot grant permission to move.
-
 ## Configuration
 
 ```text
@@ -244,7 +191,7 @@ config_rc.h
     RC freshness, 10 active channels, raw range, UART timeout, and retry.
 
 config_ui.h
-    SSD1351 master contrast and UI timing.
+    ST7789 mounting orientation and UI timing.
     One-based RC channel assignments, directions, polarities, and
     input thresholds.
 
@@ -286,7 +233,6 @@ Body Z positive    robot up
 Keep pin definitions in include/board_*.h.
 Keep ESP-IDF peripheral setup in bsp/.
 Keep long-running FreeRTOS tasks in tasks/.
-Keep temporary bring-up code in tests/.
 Do not include ESP-IDF or FreeRTOS headers in common/.
-Do not let tests own hardware that is already owned by a task.
+Keep temporary bring-up code out of the final application.
 ```
