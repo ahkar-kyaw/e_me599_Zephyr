@@ -225,6 +225,10 @@ Do not let UI, tests, or control write directly to motors.
 04_firmware/docs/firmware_architecture.md
     Firmware architecture and data flow.
 
+04_firmware/docs/software_guide_and_roadmap.md
+    Comprehensive current-software guide, modification map, limitations,
+    and staged roadmap to the final robot.
+
 04_firmware/docs/naming_conventions.md
     File, module, task, and macro naming rules.
 
