@@ -10,7 +10,7 @@ platforms/stm32/
     CMakePresets.json
     STM32H723XG_FLASH.ld
     startup_stm32h723xx.s
-    zephyr.ioc
+    stm32h723.ioc
 
     Core/
         CubeMX generated application entry, peripheral init, and FreeRTOS setup

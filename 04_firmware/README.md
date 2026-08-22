@@ -1,6 +1,6 @@
-# Zephyr firmware
+# Robot firmware
 
-Zephyr firmware is organized to support an ESP32 bring-up platform and
+This firmware is organized to support an ESP32 bring-up platform and
 an STM32H723ZG target platform while keeping reusable robot logic
 portable. The active ESP32 target includes the IMU pipeline, a
 16-channel CRSF receiver path, an ST7789 status display, and a

@@ -256,7 +256,7 @@ Raw 1792    Nominal high endpoint, 2000 us
 Raw 1811    Extended high endpoint, approximately 2012 us
 ```
 
-Zephyr accepts `172-1811` in `config_rc.h` as the protocol validity
+The receiver path accepts `172-1811` in `config_rc.h` as the protocol validity
 range. The CRSF snapshot still carries all 16 protocol slots, but
 `APP_RC_ACTIVE_CHANNEL_COUNT` is currently 10 so unused CH11-CH16 do
 not block safety. UI neutral and activation thresholds are separate

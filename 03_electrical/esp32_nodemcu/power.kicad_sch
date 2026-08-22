@@ -1,0 +1,58 @@
+(kicad_sch
+	(version 20260306)
+	(generator "eeschema")
+	(generator_version "10.0")
+	(uuid "c7460ca4-1a66-43ae-ae1a-456c8eed50b9")
+	(paper "A4")
+	(lib_symbols)
+	(text "BQ76942"
+		(exclude_from_sim no)
+		(at 114.3 50.8 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "15f422bd-cb2a-4906-862b-e77577cc772c")
+	)
+	(text "LT8609S"
+		(exclude_from_sim no)
+		(at 139.7 50.8 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "172375a5-2ede-4842-b5c5-348e982900d6")
+	)
+	(text "TPSM828302"
+		(exclude_from_sim no)
+		(at 165.1 50.8 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "ae30aacb-396c-4100-b380-21d3a62e5fdb")
+	)
+	(text "TPS25751A\n60 W max"
+		(exclude_from_sim no)
+		(at 63.5 50.8 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "c78b6cd9-02ee-4c97-8136-ce9358013647")
+	)
+	(text "BQ25756"
+		(exclude_from_sim no)
+		(at 88.9 50.8 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "ddfdb93d-168e-415a-95dd-d4f2e89c9995")
+	)
+)

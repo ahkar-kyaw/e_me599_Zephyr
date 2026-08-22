@@ -1,5 +1,0 @@
-(sym_lib_table
-	(version 7)
-	(lib (name "vendor_symbols") (type "KiCad") (uri "${KIPRJMOD}/libraries/vendor_symbols") (options "") (descr ""))
-	(lib (name "project_symbols") (type "KiCad") (uri "${KIPRJMOD}/libraries/project_symbols") (options "") (descr ""))
-)

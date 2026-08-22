@@ -1,8 +1,8 @@
-# Zephyr software guide and roadmap
+# Software guide and roadmap
 
 ## 1. Purpose
 
-This document explains the current Zephyr firmware, how the modules fit
+This document explains the current firmware, how the modules fit
 together, where to make common changes, and the recommended software path
 from the current ESP32 checkpoint to the final balancing robot.
 
@@ -22,7 +22,7 @@ persistent tuning service, or STM32 implementation of the ESP32 BSPs.
 
 ## 2. The main architectural idea
 
-Zephyr separates portable robot behavior from MCU-specific implementation.
+The firmware separates portable robot behavior from MCU-specific implementation.
 
 ```text
 04_firmware/common/
